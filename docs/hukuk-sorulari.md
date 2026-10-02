@@ -86,6 +86,11 @@ kalan nokta ayrı ayrı yazılsın. Kesin olmayan yerde bunun belirtilmesi isten
     kampanyalar) yeterli mi? Haftalık özet bildirimi bu onaydan bağımsız bir hizmet
     bildirimi sayılır mı (bkz. 10)?
 
+15. **Yapay zekâ (v2).** Çocuğun toplulaştırılmış verisinden (ad ve serbest metin
+    olmadan) velinin göreceği haftalık yorum üretmek için bir dil modeli sağlayıcısı
+    kullanılırsa: yurt dışı aktarım şartları, sağlayıcıyla eğitimde kullanılmama ve
+    saklama süresi sözleşmesi, aydınlatma metnine ekleme ve açık rıza gerekir mi?
+
 > Not: Bu soruların bir kısmı başka bir yapay zekâ ile yapılan ön
 > değerlendirmeden geldi; o değerlendirmedeki "risk neredeyse sıfır" gibi
 > ifadeler kesin hüküm değildir ve avukat teyidi gerektirir.

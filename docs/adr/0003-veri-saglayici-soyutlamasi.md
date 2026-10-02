@@ -41,3 +41,8 @@ karne fotoğrafı okuma) ya da kurumla anlaşma yoluyla gelir.
   hiçbir koşulda girmez, günde bir kez ve yalnızca kendi hesabı için çalışır.
 - Manuel giriş yolu ticari sürümde **birinci sınıf vatandaş** olarak tasarlanır,
   sonradan eklenen bir yedek olarak değil.
+
+## Not (2026-10-02)
+
+Karar değişmedi, kapsam netleşti (ADR-0015): v1'de manuel deneme girişi arayüzün ilk
+uygulamasıdır; Okulizyon toplayıcısı v2'ye bırakıldı.

@@ -27,6 +27,7 @@ Kurallar:
 | [0012](0012-kimlik-ve-oturum-modeli.md) | Kimlik ve oturum modeli | Kabul |
 | [0013](0013-plan-ayarlari-ve-dinamik-plan.md) | Plan ayarları ve dinamik plan kuralları (0005/0009'u kısmen değiştirir) | Kabul |
 | [0014](0014-katman-siniri-ve-odev-akisi.md) | Katman sınırı, ödev akışı ve öğretmen görünürlüğü (0006/0007'yi kısmen değiştirir) | Kabul |
+| [0015](0015-v1-kapsami-deneme-ve-yapay-zeka.md) | v1 kapsamı: manuel deneme girişi; Okulizyon ve yapay zekâ v2 | Kabul |
 
 ## Açık kalanlar
 
