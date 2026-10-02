@@ -1,6 +1,6 @@
 # ADR-0013: Plan ayarları ve dinamik plan kuralları
 
-- **Durum:** Önerildi
+- **Durum:** Kabul
 - **Tarih:** 2026-10-02
 
 ## Bağlam
@@ -51,12 +51,12 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
 8. **Aylık görünüm, haftalık detay.** Veliye, yıllık plandan gelen en fazla 4
    haftalık *konu haritası* (hangi hafta hangi konu) gösterilir. Somut görevler
    (kaynak, sayfa, test no) her hafta başında, son denemeye göre üretilir.
-9. **Cumartesi** (açık): deneme yapılan hafta Cumartesi deneme + yanlış analizi
-   günüdür (ADR-0009 madde 5), bütçe aşılmadan çalışma görevlerinin yerini alır;
-   deneme olmayan haftada normal çalışma günüdür.
+9. **Cumartesi:** deneme yapılan hafta Cumartesi deneme + yanlış analizi günüdür
+   (ADR-0009 madde 5), bütçe aşılmadan çalışma görevlerinin yerini alır; deneme
+   olmayan haftada normal çalışma günüdür.
 10. **Kitap okuma** günde 30 dk bütçe dışı kalır (ADR-0009 madde 6, değişmedi).
-11. **Proje ödevi** (açık): teslim tarihli bir ödev türü olarak ele alınır;
-    parçalara bölünüp bölünmeyeceği ekran tasarımında netleşecek.
+11. **Proje ödevi:** v1'de teslim tarihli bir ödev türüdür, hatırlatma olarak
+    görünür. Parçalara bölüp haftalara yaymak sonraya bırakılır.
 
 ## Gerekçe
 
@@ -92,5 +92,9 @@ ders seçimiyle çalışmaz.
   tutulur (erişim kaydı ilkesi, ADR-0010).
 - Kabul edildiğinde ADR-0005 ve ADR-0009'un durumu *"Kabul (kısmen değiştirildi:
   ADR-0013)"* olarak güncellenir.
-- Açık: madde 9 (Cumartesi), madde 11 (proje ödevi), ve ders önceliği (normal/yüksek)
-  v1 dışında bırakıldı.
+- **Ücretli/ücretsiz sınırı bu ADR'de çizilmedi** (ADR-0006 geçerli: ücretsiz
+  "ne oldu", ücretli "ne yapmalı"). Hangi ayarın hangi katmanda olacağı sonra
+  belirlenecek. Bunu ucuz tutmak için plan özelliklerinin (gün/ders/kaynak ayarı,
+  taşıma, proje ödevi bölme, plan üretimi) erişimi API'de **tek bir yetki
+  kontrolünden** geçer; sınır değişirse tek yer değişir.
+- Ders önceliği (normal/yüksek) v1 dışında bırakıldı.

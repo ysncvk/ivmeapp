@@ -1,6 +1,6 @@
 # ADR-0005: Plan kural tabanlı motorla üretilir, elle yazılmaz
 
-- **Durum:** Kabul
+- **Durum:** Kabul (kısmen değiştirildi: ADR-0013)
 - **Tarih:** 2026-09-27
 
 ## Bağlam

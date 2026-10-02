@@ -1,6 +1,6 @@
 # ADR-0009: Günlük yük üst sınırı motorun aşamayacağı bir kısıttır
 
-- **Durum:** Kabul
+- **Durum:** Kabul (kısmen değiştirildi: ADR-0013)
 - **Tarih:** 2026-09-27
 
 ## Bağlam
