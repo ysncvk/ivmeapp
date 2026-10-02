@@ -61,6 +61,7 @@ function LoginPage() {
 		<main className="mx-auto flex min-h-svh w-full max-w-md flex-col justify-center gap-6 px-5 py-10">
 			<Brand />
 			<h1 className="font-extrabold text-3xl">Giriş yap</h1>
+			{/* biome-ignore lint/a11y/useSemanticElements: düğme grubu, fieldset değil */}
 			<div className="flex gap-2" role="group" aria-label="Kim giriyor?">
 				<Chip active={who === "adult"} onClick={() => setWho("adult")}>
 					Veli / Öğretmen

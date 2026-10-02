@@ -105,7 +105,7 @@ describe("çocuk hesabı (ADR-0012)", () => {
 			body: { username: "kaplan-4821", password: "ada123" },
 		});
 		expect(res?.user.id).toBe(userId);
-		expect((res?.user as { role?: string }).role).toBe("student");
+		expect((res?.user as { role?: string } | undefined)?.role).toBe("student");
 	});
 
 	it("yanlış şifreyle giriş reddedilir; şifre düz metin saklanmaz", async () => {

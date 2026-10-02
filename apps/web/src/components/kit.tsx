@@ -16,6 +16,7 @@ export function Field({
 	children: ReactNode;
 }) {
 	return (
+		// biome-ignore lint/a11y/noLabelWithoutControl: giriş alanı children olarak sarılır
 		<label className="flex flex-col gap-1.5">
 			<span className="font-bold text-sm">{label}</span>
 			{children}
@@ -137,6 +138,7 @@ export function Modal({
 		if (el && !el.open) el.showModal();
 	}, []);
 	return (
+		// biome-ignore lint/a11y/useKeyWithClickEvents: Esc yerel <dialog> tarafından işlenir; tıklama yalnızca arka plan kapatmadır
 		<dialog
 			ref={ref}
 			onClose={onClose}

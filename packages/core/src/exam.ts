@@ -80,7 +80,9 @@ export function analyzeExams(exams: readonly ExamSummary[]): Diagnosis {
 	const weak = new Map<string, WeakTopicStat>();
 	for (const exam of sorted) {
 		for (const s of exam.subjects) {
-			(trend[s.subject] ??= []).push({ date: exam.date, net: s.net });
+			const series = trend[s.subject] ?? [];
+			series.push({ date: exam.date, net: s.net });
+			trend[s.subject] = series;
 		}
 		for (const w of exam.weakTopics) {
 			const key = `${w.subject}\u0000${w.topic.toLocaleLowerCase("tr")}`;

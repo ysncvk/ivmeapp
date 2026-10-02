@@ -117,3 +117,14 @@ Durum: ✅ uygulandı · 💬 tartışılacak · 🔁 geri alınabilir
 - **Ne:** Better Auth oran sınırı tek süreç belleğinde (v1 tek sunucu). Çocuk şifresi 6–64
   (11 yaşındaki çocuğun hatırlayabilmesi); veli şifresi en az 8. Çok sunuculu dağıtımda
   oran sınırı ikincil depoya taşınmalı.
+
+### K-018: Web rotaları ve rol yönlendirmesi ✅
+- **Ne:** `/giris` (veli/öğretmen e-posta, öğrenci kullanıcı adı), `/kayit` (veli ya da öğretmen),
+  `/veli`, `/ogretmen`, `/ogrenci`, `/katil/:kod`. Her rota `requireRole` ile korunur; yanlış rol
+  kendi ana ekranına yönlenir. Yetkilendirme asıl olarak API'dedir (ADR-0010), rota koruması yalnızca UX.
+- **Davet:** oturum yoksa `/kayit?next=/katil/KOD` — veli kayıt olunca gruba katılma ekranına döner.
+
+### K-019: Saklama süresi temizliği yalnızca plan verisini siler ✅
+- **Ne:** Erişimi bitmiş aboneliklerde (iptalden `retainUntil`, bitmemiş denemede deneme bitişinden
+  183 gün sonra) `plan` kayıtları silinir. Ödev, deneme ve ödül kayıtları ücretsiz katmandadır
+  ve kalır. Pazar 18:00 (İstanbul) işi yalnızca erişimi olan çocuklar için gelecek haftayı kurar.

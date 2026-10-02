@@ -1,30 +1,30 @@
 {
-  "name": "@ivmeapp/api",
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.ts"
-  },
-  "scripts": {
-    "build": "tsc -b",
-    "check-types": "tsc -b",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "@ivmeapp/auth": "workspace:*",
-    "@ivmeapp/db": "workspace:*",
-    "@orpc/client": "catalog:",
-    "@orpc/openapi": "catalog:",
-    "@orpc/server": "catalog:",
-    "@orpc/zod": "catalog:",
-    "zod": "catalog:",
-    "@ivmeapp/core": "workspace:*",
-    "@ivmeapp/library": "workspace:*",
-    "drizzle-orm": "catalog:"
-  },
-  "devDependencies": {
-    "@ivmeapp/config": "workspace:*",
-    "typescript": "catalog:",
-    "vitest": "^3.2.4"
-  }
+	"name": "@ivmeapp/api",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./*": "./src/*.ts"
+	},
+	"scripts": {
+		"build": "tsc -b",
+		"check-types": "tsc -b",
+		"test": "vitest run"
+	},
+	"dependencies": {
+		"@ivmeapp/auth": "workspace:*",
+		"@ivmeapp/db": "workspace:*",
+		"@orpc/client": "catalog:",
+		"@orpc/openapi": "catalog:",
+		"@orpc/server": "catalog:",
+		"@orpc/zod": "catalog:",
+		"zod": "catalog:",
+		"@ivmeapp/core": "workspace:*",
+		"@ivmeapp/library": "workspace:*",
+		"drizzle-orm": "catalog:"
+	},
+	"devDependencies": {
+		"@ivmeapp/config": "workspace:*",
+		"typescript": "catalog:",
+		"vitest": "^3.2.4"
+	}
 }

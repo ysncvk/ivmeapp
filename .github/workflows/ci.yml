@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ivme
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5544:5432
+        options: >-
+          --health-cmd "pg_isready -U ivme"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Entegrasyon testleri paket başına ayrı veritabanı açar (docs/karar-gunlugu.md K-012)
+      TEST_DATABASE_URL: postgres://ivme@localhost:5544/postgres
+      BETTER_AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
+      BETTER_AUTH_URL: http://localhost:3000
+      CORS_ORIGIN: http://localhost:3001
+      DATABASE_URL: postgres://ivme@localhost:5544/postgres
+      VITE_SERVER_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Biome
+        run: pnpm exec biome check .
+      - name: Tipler ve derleme
+        run: pnpm check-types
+      - name: Testler
+        run: pnpm test

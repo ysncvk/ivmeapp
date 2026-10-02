@@ -1,26 +1,26 @@
 {
-  "name": "@ivmeapp/auth",
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.ts"
-  },
-  "scripts": {
-    "build": "tsc -b",
-    "check-types": "tsc -b",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "@better-auth/core": "1.7.5",
-    "@better-auth/drizzle-adapter": "1.7.5",
-    "@ivmeapp/db": "workspace:*",
-    "better-auth": "catalog:",
-    "drizzle-orm": "catalog:",
-    "zod": "catalog:"
-  },
-  "devDependencies": {
-    "@ivmeapp/config": "workspace:*",
-    "typescript": "catalog:",
-    "vitest": "^3.2.4"
-  }
+	"name": "@ivmeapp/auth",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./*": "./src/*.ts"
+	},
+	"scripts": {
+		"build": "tsc -b",
+		"check-types": "tsc -b",
+		"test": "vitest run"
+	},
+	"dependencies": {
+		"@better-auth/core": "1.7.5",
+		"@better-auth/drizzle-adapter": "1.7.5",
+		"@ivmeapp/db": "workspace:*",
+		"better-auth": "catalog:",
+		"drizzle-orm": "catalog:",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@ivmeapp/config": "workspace:*",
+		"typescript": "catalog:",
+		"vitest": "^3.2.4"
+	}
 }

@@ -10,6 +10,7 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
+		"@ivmeapp/api": "workspace:*",
 		"@ivmeapp/core": "workspace:*",
 		"@ivmeapp/db": "workspace:*",
 		"zod": "catalog:"

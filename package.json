@@ -21,6 +21,7 @@
 		"check": "biome check --write .",
 		"dev:worker": "turbo run dev -F worker --",
 		"db:reset": "./scripts/db-reset.sh",
+		"db:seed": "cd apps/server && pnpm db:seed",
 		"test": "turbo test"
 	},
 	"dependencies": {

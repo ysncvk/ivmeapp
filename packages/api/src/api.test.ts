@@ -1,6 +1,6 @@
 import { createAuth } from "@ivmeapp/auth";
 import { user } from "@ivmeapp/db/schema/auth";
-import { accessLog, planTask } from "@ivmeapp/db/schema/domain";
+import { accessLog, plan, planTask } from "@ivmeapp/db/schema/domain";
 import {
 	createTestDatabase,
 	type TestDatabase,
@@ -11,6 +11,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { Context } from "./context";
 import { appRouter } from "./routers/index";
+import {
+	generateUpcomingPlans,
+	purgeExpiredPlanData,
+} from "./services/maintenance";
 
 let t: TestDatabase;
 let auth: ReturnType<typeof createAuth>;
@@ -395,5 +399,42 @@ describe("ödev, deneme ve öğretmen", () => {
 		expect(left.every((x) => x.childId !== child.id)).toBe(true);
 		const rows = await t.db.select().from(user).where(eq(user.id, guardianId));
 		expect(rows).toHaveLength(0);
+	});
+});
+
+describe("bakım işleri", () => {
+	it("Pazar işi gelecek haftanın planını bir kez kurar; saklama süresi dolan plan silinir", async () => {
+		const { g, child } = await family();
+		await call(
+			appRouter.children.settings.update,
+			{ childId: child.id, sources: BOOKS },
+			{ context: g },
+		);
+		await call(
+			appRouter.subscription.startTrial,
+			{ childId: child.id },
+			{ context: g },
+		);
+		const sunday = new Date("2026-10-11T15:00:00Z");
+		const first = await generateUpcomingPlans(t.db, sunday);
+		expect(first.created).toBeGreaterThanOrEqual(1);
+		const again = await generateUpcomingPlans(t.db, sunday);
+		expect(again.created).toBe(0);
+		const week = await call(
+			appRouter.plan.week,
+			{ childId: child.id, weekStart: "2026-10-12" },
+			{ context: g },
+		);
+		expect(week.plan?.days.flatMap((d) => d.tasks).length).toBeGreaterThan(5);
+
+		// Deneme bitti, 6 ay geçti: plan verisi silinir, hesap kalır
+		const later = new Date("2027-06-01T00:00:00Z");
+		const purged = await purgeExpiredPlanData(t.db, later);
+		expect(purged.children).toBeGreaterThanOrEqual(1);
+		const left = await t.db
+			.select()
+			.from(plan)
+			.where(eq(plan.childId, child.id));
+		expect(left).toHaveLength(0);
 	});
 });

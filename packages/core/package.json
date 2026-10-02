@@ -1,18 +1,18 @@
 {
-  "name": "@ivmeapp/core",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "scripts": {
-    "check-types": "tsc -b",
-    "test": "vitest run"
-  },
-  "devDependencies": {
-    "@ivmeapp/config": "workspace:*",
-    "typescript": "catalog:",
-    "vitest": "^3.2.4"
-  }
+	"name": "@ivmeapp/core",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"check-types": "tsc -b",
+		"test": "vitest run"
+	},
+	"devDependencies": {
+		"@ivmeapp/config": "workspace:*",
+		"typescript": "catalog:",
+		"vitest": "^3.2.4"
+	}
 }
