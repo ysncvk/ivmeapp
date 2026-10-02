@@ -57,3 +57,40 @@ Durum: ✅ uygulandı · 💬 tartışılacak · 🔁 geri alınabilir
   ADR-0004'teki "birkaç haftada bir düzeltme" ihtiyacının karşılığı.
 - **Alternatif:** Plana hiç dokunulmaması (okulla senkron ilkesi bozulur).
 - **Tartışılacak:** Arayüzü (hafta seç mi, ünite seç mi) tasarım sırasında netleşir.
+
+## Veri modeli ve kimlik
+
+### K-007: Çocuk, Better Auth'ta ayrı bir kullanıcıdır; e-posta alanı yapay bir değerdir ✅
+- **Ne:** `user.role = 'student'`, kullanıcı adı + şifre girişi (username eklentisi). Better Auth
+  `user.email` zorunlu ve benzersiz olduğu için çocuğa `<id>@cocuk.ivme.invalid` gibi
+  çözümlenemeyen bir değer verilir; gerçek e-posta hiçbir yerde tutulmaz (ADR-0012 sonuç notu).
+  `child` kaydı velinin hesabına bağlıdır (`guardian_id`), silme zinciri `deleteGuardianAccount`.
+- **Neden:** ADR-0012 çocuğun kendi cihazından giriş yapabilmesini ister, e-posta toplamamayı da.
+- **Alternatif:** Ayrı bir çocuk kimlik doğrulama sistemi (ikinci oturum mekanizması, bakım yükü).
+
+### K-008: Kütüphane ve müfredat v1'de kodda, veritabanında değil ✅🔁
+- **Ne:** Kitaplar ve yıllık planlar `packages/library` içinde TypeScript verisi; DB yalnızca
+  kullanıcı verisi ve kimlik (kitap/ünite kimliği) tutar.
+- **Neden:** Veri sürümlenir, testlenir, kod incelemesinden geçer; admin ekranı yok; derleme
+  zamanında doğrulanır. Admin ekranı gelince DB'ye taşınır (ADR-0004 admin ekranı).
+- **Tartışılacak:** Evet, içerik güncellemesi için dağıtım gerektirir.
+
+### K-009: Abonelik tablosu yalnızca yetki durumunu tutar, ödeme entegrasyonu yok ✅💬
+- **Ne:** `subscription` (çocuk başına): trial/active/canceled, deneme ve dönem tarihleri,
+  iptal sonrası `retain_until` (6 ay). Ödeme sağlayıcısı (iyzico/Stripe vb.) seçimi ve webhook
+  henüz yok; `provider`/`provider_ref` alanları hazır.
+- **Neden:** Sağlayıcı seçimi hukuk (mesafeli satış, ADR-0014) ve işletme kararı.
+
+### K-010: Admin rolü çocuk verisine erişmez (v1) ✅💬
+- **Ne:** Admin yalnızca kütüphane/kullanıcı yönetimi içindir; çocuk verisi API'de admine
+  kapalı. Destek için erişim gerekirse ayrı karar ve erişim kaydı ile eklenir.
+- **Neden:** ADR-0010 erişim minimizasyonu.
+
+### K-011: Pre-release olduğu için migration'lar tek `init`'e indirildi ✅
+- **Ne:** Henüz hiçbir ortamda uygulanmamış migration'lar silinip şema bütünüyle yeniden
+  üretildi. Bundan sonra her şema değişikliği yeni migration'dır.
+
+### K-012: Entegrasyon testleri gerçek Postgres kullanır (Docker yoksa geçici küme) ✅
+- **Ne:** `createTestDatabase(suite)` (WMS kalıbı): paket başına ayrı DB, commit'li
+  migration'lardan kurulur. `scripts/test-pg.sh start` Docker'sız geçici bir Postgres açar;
+  CI'da servis konteyneri kullanılır. `TEST_DATABASE_URL` ile taban verilir.
