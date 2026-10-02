@@ -133,6 +133,8 @@ interface Pending {
 	resource: string;
 	work: string;
 	item?: WorkItem;
+	/** Ödev görevlerinde çağıranın ödev kimliği. */
+	itemId?: string;
 }
 
 export function generateWeeklyPlan(input: PlanInput): WeeklyPlan {
@@ -173,6 +175,7 @@ export function generateWeeklyPlan(input: PlanInput): WeeklyPlan {
 				topic: hw.topic,
 				resource: "Okul ödevi",
 				work: hw.work,
+				itemId: hw.id ? `hw:${hw.id}` : undefined,
 			});
 		}
 	}
@@ -392,7 +395,7 @@ function toTask(
 	};
 	return {
 		id: `${settings.weekStart}:d${day}:b${block}`,
-		itemId: p.item?.id,
+		itemId: p.item?.id ?? p.itemId,
 		day,
 		block,
 		minutes,

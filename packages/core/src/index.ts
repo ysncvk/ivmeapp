@@ -2,6 +2,7 @@ export * from "./curriculum";
 export * from "./dates";
 export * from "./engine";
 export * from "./entitlement";
+export * from "./exam";
 export * from "./library";
 export * from "./limits";
 export * from "./provider";

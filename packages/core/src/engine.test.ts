@@ -402,3 +402,33 @@ describe("tavsiye kontrolleri", () => {
 		expect(checkBlockMinutes(60).level).toBe("warn");
 	});
 });
+
+describe("ödev kimliği", () => {
+	it("ödev görevinin itemId'si hw:<id> olur", () => {
+		const plan = generateWeeklyPlan(
+			base({
+				homework: [
+					{ id: "abc", day: 1, subject: "fen", topic: "K", work: "Ödev" },
+				],
+			}),
+		);
+		const hw = plan.days
+			.flatMap((d) => d.tasks)
+			.find((t) => t.reason.source === "homework");
+		expect(hw?.itemId).toBe("hw:abc");
+	});
+
+	it("taşıma görev kimliğini korur", () => {
+		const plan = generateWeeklyPlan(base());
+		const task = plan.days[0]?.tasks.find(
+			(t) => t.reason.source === "weekly_topic",
+		);
+		if (!task) throw new Error("görev yok");
+		const res = moveTask(plan, task.id, 2);
+		if (!res.ok) throw new Error("taşınamadı");
+		const moved = res.plan.days
+			.flatMap((d) => d.tasks)
+			.find((t) => t.id === task.id);
+		expect(moved?.day).toBe(2);
+	});
+});

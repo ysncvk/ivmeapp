@@ -26,6 +26,8 @@ export interface WorkItem {
 }
 
 export interface Homework {
+	/** Çağıranın ödev kimliği; görevin `itemId`'sine `hw:<id>` olarak geçer. */
+	id?: string;
 	/** ISO hafta günü: 1 = Pazartesi ... 7 = Pazar */
 	day: number;
 	subject: Subject;
