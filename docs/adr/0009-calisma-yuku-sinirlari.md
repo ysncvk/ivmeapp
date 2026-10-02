@@ -69,3 +69,9 @@ aralığı artık tavsiyedir, sabit sınır değil. Çalışma günü sayısı v
 varsayılan ve tavsiye verir (6 gün, en az bir tam boş gün), engellemez.
 Değişmeyenler: okul ödevi düşmez (ADR-0005 kesme kuralı), kitap okumanın
 bütçe dışı olması, sürenin çocuğun ekranında manşet metrik olmaması.
+
+Öğrenci ekranında (2026-10-02): her görev kartı **hangi kitaptan ve kaç dakika**
+çalışılacağını küçük bilgi olarak gösterir; çocuk adım adım ne yapacağını görür.
+Karar 7 yine geçerlidir: toplam süre ("bugün kaç saat") ve saat/zaman dilimi
+gösterilmez ve atanmaz, manşet görev sayısı ve konu adıdır. Çalışma saatini çocuk
+kendi belirler, çünkü ders programını ve diğer faaliyetlerini uygulama bilemez.

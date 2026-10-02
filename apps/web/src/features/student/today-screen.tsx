@@ -1,6 +1,13 @@
 import { type PlanTask, rewardProgress } from "@ivmeapp/core";
 import { cn } from "@ivmeapp/ui/lib/utils";
-import { Check, Gift, PartyPopper, Sparkles } from "lucide-react";
+import {
+	BookMarked,
+	Check,
+	Clock,
+	Gift,
+	PartyPopper,
+	Sparkles,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { SUBJECTS } from "./subjects";
@@ -227,14 +234,21 @@ function TaskCard({
 				<Icon className="size-7" strokeWidth={2.4} />
 			</span>
 			<span className="min-w-0 flex-1">
-				<span
-					className={cn(
-						"block font-bold text-xs",
-						meta.text,
-						checked && "opacity-60",
-					)}
-				>
-					{isHomework ? `${meta.label} · Okul ödevi` : meta.label}
+				<span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+					<span
+						className={cn(
+							"font-bold text-xs",
+							meta.text,
+							checked && "opacity-60",
+						)}
+					>
+						{isHomework ? `${meta.label} · Okul ödevi` : meta.label}
+					</span>
+					{/* Küçük bilgi etiketi: manşet değil, toplam süre hiçbir yerde gösterilmez (ADR-0009). */}
+					<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2 py-0.5 font-bold text-[0.7rem] text-muted-foreground">
+						<Clock aria-hidden className="size-3" />
+						{task.minutes} dk
+					</span>
 				</span>
 				<span
 					className={cn(
@@ -253,8 +267,9 @@ function TaskCard({
 					{task.work}
 				</span>
 				{!isHomework && (
-					<span className="block text-muted-foreground text-xs">
-						{task.resource}
+					<span className="mt-1 flex items-center gap-1.5 font-semibold text-muted-foreground text-sm">
+						<BookMarked aria-hidden className="size-4 shrink-0" />
+						<span className="min-w-0">{task.resource}</span>
 					</span>
 				)}
 			</span>
