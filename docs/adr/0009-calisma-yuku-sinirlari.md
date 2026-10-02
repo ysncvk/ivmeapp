@@ -65,6 +65,7 @@ Veli bütçeyi serbestçe belirler; 2 saat üstü ve çok yüksek değerlerdeki 
 (karar 1) tavsiyedir, engel değildir. Günde en fazla 3 madde gibi sabit bir madde
 sınırı yoktur, madde sayısı bütçeden türer. Blok süresi (karar 3) çocuğa özeldir: veli çocuk profilinde "kesintisiz kaç dakika
 dikkatli çalışıyor" sorusunu yanıtlar, uygulama 25-30 dk tavsiye eder, 20-30 dk
-aralığı artık tavsiyedir, sabit sınır değil. Değişmeyenler: haftada
-en az bir tam boş gün (haftada en fazla 6 çalışma günü), kitap okumanın bütçe dışı
-olması, süre manşet metrik olmaması.
+aralığı artık tavsiyedir, sabit sınır değil. Çalışma günü sayısı ve tam boş gün de artık veliye sorulan ayardır; uygulama
+varsayılan ve tavsiye verir (6 gün, en az bir tam boş gün), engellemez.
+Değişmeyenler: okul ödevi düşmez (karar 5'teki önceliği korur), kitap okumanın
+bütçe dışı olması, sürenin çocuğun ekranında manşet metrik olmaması.

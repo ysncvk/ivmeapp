@@ -82,6 +82,8 @@ varsayım, matematik ≥3 gün + Türkçe ≥3 gün + Fen/Sosyal/İngilizce'nin 
 - **Günde en fazla 3 madde sınırı kalktı** (ADR-0013). Günlük blok ve madde sayısı
   velinin verdiği bütçeden türer. Bütçe velinin kararıdır; uygulama tavsiye ve
   uyarı verir, engellemez. Motor velinin verdiği bütçeyi aşmaz.
+- **Çalışma günü sayısı ve tam boş gün veli ayarıdır** (ADR-0013); varsayılan 6
+  gün ve en az bir tam boş gün. **Okul ödevi düşmez** kuralı değişmedi.
 - **Blok süresi çocuğa özeldir** (ADR-0013): tablodaki 25-30 dk varsayılandır,
   veli çocuğun dikkat süresine göre belirler.
 - Yuva sayısı bu yüzden gün sayısına olduğu kadar bütçeye de bağlıdır: gün ya da
