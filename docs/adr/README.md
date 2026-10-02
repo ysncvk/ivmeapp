@@ -28,6 +28,7 @@ Kurallar:
 | [0013](0013-plan-ayarlari-ve-dinamik-plan.md) | Plan ayarları ve dinamik plan kuralları (0005/0009'u kısmen değiştirir) | Kabul |
 | [0014](0014-katman-siniri-ve-odev-akisi.md) | Katman sınırı, ödev akışı ve öğretmen görünürlüğü (0006/0007'yi kısmen değiştirir) | Kabul |
 | [0015](0015-v1-kapsami-deneme-ve-yapay-zeka.md) | v1 kapsamı: manuel deneme girişi; Okulizyon ve yapay zekâ v2 | Kabul |
+| [0016](0016-odul-sistemi.md) | Ödül sistemi: ödülleri veli tanımlar, hedefi çocuk tamamlama ile açar | Kabul |
 
 ## Açık kalanlar
 
