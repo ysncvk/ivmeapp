@@ -94,3 +94,26 @@ Durum: ✅ uygulandı · 💬 tartışılacak · 🔁 geri alınabilir
 - **Ne:** `createTestDatabase(suite)` (WMS kalıbı): paket başına ayrı DB, commit'li
   migration'lardan kurulur. `scripts/test-pg.sh start` Docker'sız geçici bir Postgres açar;
   CI'da servis konteyneri kullanılır. `TEST_DATABASE_URL` ile taban verilir.
+
+### K-013: Erişim kaydı yalnızca öğretmen/admin görüntülemelerinde ✅
+- **Ne:** `access_log` öğretmenin grup listesi görüntülemesinde yazılır. Veli/çocuğun kendi
+  verisine erişimi kaydedilmez (kendi verisi).
+- **Neden:** ADR-0010 erişim şeffaflığı; kendi verisini görmek denetim konusu değil.
+
+### K-014: Plan yeniden kurma yalnızca ilerleme yokken ✅
+- **Ne:** `plan.rebuild` bu haftada işaretlenmiş görev varsa `CONFLICT (has_progress)` döner.
+  Ayar değişikliği ilerleyen haftalara (`effectiveFrom`) uygulanır.
+- **Neden:** Çocuğun yaptığı işin kaybolmaması; ADR-0013 "ayar değişikliği geleceğe işler".
+
+### K-015: Ödevin plana düştüğü gün ✅
+- **Ne:** Teslim tarihi varsa teslimden önceki son çalışma günü, yoksa en yakın çalışma günü
+  (`homeworkDay`). Ödev hiçbir zaman düşmez; yer yoksa `unplaced` olarak veliye bildirilir.
+
+### K-016: MEB ders kitabı verisi olmayan derslerde haftalık kalem üretilmez ✅
+- **Ne:** Kaynak seçilmemiş/müfredat bulunmayan ders (Sosyal, İngilizce) için plan görevi
+  oluşmaz; yalnızca ödevler plana girer. Veri geldikçe kütüphaneye eklenir (K-008).
+
+### K-017: Oran sınırı bellek içi, çocuk şifresi en az 6 karakter ✅💬
+- **Ne:** Better Auth oran sınırı tek süreç belleğinde (v1 tek sunucu). Çocuk şifresi 6–64
+  (11 yaşındaki çocuğun hatırlayabilmesi); veli şifresi en az 8. Çok sunuculu dağıtımda
+  oran sınırı ikincil depoya taşınmalı.
