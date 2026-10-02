@@ -23,6 +23,8 @@ Kurallar:
 | [0008](0008-rol-platform-dagilimi.md) | Öğrenci/veli mobil öncelikli, öğretmen/admin web öncelikli | Kabul |
 | [0009](0009-calisma-yuku-sinirlari.md) | Günlük yük üst sınırı motorun aşamayacağı bir kısıttır | Kabul |
 | [0010](0010-cocuk-verisi-ve-erisim.md) | Çocuk verisi ve erişim kontrolü ilkeleri | Kabul |
+| [0011](0011-teknoloji-yigini.md) | Teknoloji yığını ve repo yapısı | Kabul |
+| [0012](0012-kimlik-ve-oturum-modeli.md) | Kimlik ve oturum modeli | Kabul |
 
 ## Açık kalanlar
 
@@ -30,4 +32,5 @@ Kurallar:
   Yedek: Rahvan. Çocuk tarafındaki karakter adı ayrı bir karar (öneri: Sofya).
 - Öğretmenin mobilde yapabileceklerinin tam sınırı (ADR-0008'de çerçeve var,
   ekran bazında netleşmedi).
+- İkincil veli: aynı çocuğu birden fazla veli görebilsin mi (ADR-0012, v1'de tek veli).
 - Ücretli katman fiyatı (300-500 TL aralığı konuşuldu, karar verilmedi).
