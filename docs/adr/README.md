@@ -34,7 +34,5 @@ Kurallar:
 - Marka adı **İvme** (`ivmeapp.com`) olarak kullanılıyor. TÜRKPATENT sınıf 9 ve 41
   araması hâlâ yapılmadı, yayından önce yapılmalı. Yedek: Rahvan. Çocuk tarafındaki
   karakter adı ayrı bir karar (öneri: Sofya).
-- Öğretmenin mobilde yapabileceklerinin tam sınırı (ADR-0008'de çerçeve var,
-  ekran bazında netleşmedi).
 - İkincil veli: aynı çocuğu birden fazla veli görebilsin mi (ADR-0012, v1'de tek veli).
 - Ücretli katman fiyatı (300-500 TL aralığı konuşuldu, karar verilmedi).

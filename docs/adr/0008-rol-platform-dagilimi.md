@@ -45,3 +45,8 @@ Karar değişmedi, açıklık getirildi: "mobil öncelikli" öğrenci ve veli ek
 masaüstünde eksik çalışacağı anlamına gelmez. Dört rolün tamamı her cihazda tam
 çalışır; fark yalnızca tasarım önceliğidir. Bu, ADR-0011'de "tüm roller
 responsive" şartı olarak yazıldı.
+
+Öğretmenin mobilde yapabileceklerinin ayrı bir sınırı yoktur: öğretmen her işi hem
+webden hem mobilden yapabilir. "Mobilde bak ve onayla, webde kur ve yönet" yalnızca
+tasarım önceliğidir; hiçbir işlev cihaza göre kısıtlanmaz. Bu nedenle ADR-0008'in
+önceki "tam liste netleşmedi" maddesi kapanmıştır.
