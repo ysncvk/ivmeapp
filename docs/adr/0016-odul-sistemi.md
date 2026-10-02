@@ -15,7 +15,9 @@ ADR-0008 öğrenci ekranında puandan söz etti ama ödülün ne olduğunu tanı
    (örn. sinema, bisiklet gezisi, bir oyun saati). Uygulama ödülü kendisi üretmez,
    sanal para ya da mağaza yoktur.
 2. **Üç seviye:** günlük (küçük), haftalık, büyük (uzun vadeli; örn. dört haftalık).
-   Veli her seviyeye bir ödül yazar; uygulama örnek öneriler sunar.
+   Veli her seviyeye bir ödül yazar; uygulama örnek öneriler sunar (örn. sevdiği
+   menüde yemek, bir saat ek oyun konsolu/TV süresi, sevdiği maça gitmek ya da
+   izlemek).
 3. **Hedefi tamamlama belirler.** Bir ödülün açılma ölçütü *görev tamamlama oranı*dır
    (örn. haftanın görevlerinin %80'i). Doğru sayısı, net ya da süre ölçüt değildir;
    süre zaten manşet metrik olmaz (ADR-0009). Varsayılan eşikleri uygulama önerir,
