@@ -77,3 +77,9 @@ yaratır; ADR-0010'daki aile ayarlarının öğretmene kapalı olması ilkesine 
   ile ayrışır.
 - Öğretmenin ekranı plan görevi verisini hiçbir sorguda içermez; bu API
   yetkilendirmesinde test edilir (ADR-0010).
+- **Arayüz dili:** öğretmen tarafında "sınıf" yerine "çalışma grubu" kullanılır,
+  resmi okul algısından kaçınmak için. Veri modelinde ve ADR'lerde terim `class`
+  ("sınıf") kalabilir; bu yalnızca arayüz metnidir.
+- **Öğretmen davet mesajı:** öğretmene hazır bir davet metni sunulur; ödev
+  takibinin ücretsiz olduğunu ve kart bilgisi gerekmediğini belirtir. Metin hukuk
+  gözden geçirmesinden geçer.

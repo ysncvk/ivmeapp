@@ -64,5 +64,8 @@ iletişim bilgisini bizim tutmamızı gerektirir ve gereksiz KVKK yükü getirir
   önerilir, oran sınırlama (giriş denemesi) ve hesap kilitleme baştan konur.
 - Yetkilendirme API'de çocuk ↔ veli ↔ sınıf ilişkisi üzerinden yapılır, her
   çağrıda. Erişim kaydı (ADR-0010) hangi oturumun hangi çocuğa baktığını tutar.
+- Çocuk ilk girişte, yaşa uygun, sade ve görsel destekli bir aydınlatma ekranı
+  görür (ADR-0010 madde 4'ün çocuk tarafı). Metnin içeriği hukuk gözden
+  geçirmesinden çıkar.
 - Açık kalan: **ikincil veli** (anne ve baba aynı çocuğu görsün mü). v1'de bir
   çocuk profili tek veli hesabına bağlıdır; ikinci veli ayrı bir karar.
