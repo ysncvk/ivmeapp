@@ -26,10 +26,14 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
    - **Kaynaklar.** Kütüphaneden (ADR-0004) seçilir. Hiç seçilmezse MEB ders
      kitabı kullanılır. Motor kaynak sayısından bağımsız çalışır.
    Ayar değişikliği **bir sonraki haftanın** planında geçerli olur.
-2. **Korkuluklar ayarla değişmez** (ADR-0009): bütçe aşılamaz, günde en fazla 3
-   madde, blok 20-30 dk, okul ödevi düşmez, **haftada en az bir gün tamamen
-   boş**. ADR-0009 madde 4'ün "hafta içi 5 gün" kuralı yerine: *haftada en fazla 6
-   çalışma günü, en az bir gün tam boş.*
+2. **Yük velinin kararıdır, uygulama tavsiye verir.** Günde en fazla 3 madde gibi
+   sabit bir madde sınırı **yoktur**; günlük madde sayısı velinin verdiği bütçeden
+   türer (örn. 90 dk ≈ 3 blok, 180 dk ≈ 6 blok). Bütçe için ADR-0009'daki uyarı
+   seviyeleri (2 saat üstü uyarı, çok yüksekte daha açık uyarı) **tavsiyedir,
+   engel değildir**. Motor yine velinin verdiği bütçeyi aşmaz ve görev eklemez.
+   Değişmeyen kısıtlar: blok 20-30 dk, okul ödevi düşmez, **haftada en az bir
+   gün tamamen boş**. ADR-0009 madde 4'ün "hafta içi 5 gün" kuralı yerine:
+   *haftada en fazla 6 çalışma günü, en az bir gün tam boş.*
 3. **Motor kota tabanlıdır.** Seçili derslerin haftalık yuva kotası (müfredattaki
    konum ve veli seçimine göre) hesaplanır, yuvalar günlere yayılır; aynı ders art
    arda günlere yığılmaz. Matematik ve Türkçe açıksa hedef haftada 3 gün; yuva yetmezse
@@ -40,9 +44,10 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
    veliye "bu ayarlarla şu konulara yetişilmeyebilir" uyarısı bundan üretilir.
    Motor yine görev eklemez, yalnızca neyin kesildiğini gösterir.
 5. **Devir.** Yapılmayan görev havuza döner ve gelecek haftanın öncelik sırasında
-   öne alınır. Günlük madde sayısı artmaz (ADR-0005, değişmedi).
+   öne alınır. Devreden iş günlük bütçeyi aşmaz; görev eklemek değil, sıralamada
+   öne almaktır.
 6. **Hafta içi taşıma.** Çocuk veya veli bir görevi aynı hafta içinde başka güne
-   taşıyabilir. Hedef günde bütçe ve madde kapasitesi varsa taşınır; yoksa hedef
+   taşıyabilir. Hedef günde bütçe kapasitesi varsa taşınır; yoksa hedef
    günün Blok 3 görevi havuza düşer; o da yeterli değilse taşıma reddedilir ve görev
    havuza döner. **Motor hafta içinde kendiliğinden yeniden planlamaz.** Taşıma bir
    kullanıcı eylemidir ve kayıt altına alınır.
@@ -78,8 +83,11 @@ hafta" döngüsünü (ADR-0005) bozar. Yerine konu haritası görünümü.
 **Motorun hafta içinde otomatik yeniden planlaması.** Planı gün içinde değişen
 uygulama güven kaybeder (ADR-0005). Yalnızca kullanıcı eylemiyle değişir.
 
-**Korkuluksuz, tamamen serbest ayar.** Veli 12 saatlik günlük bütçe girebilirse
-ADR-0009'un amacı kalmaz. Ayar serbest, sınırlar sabit.
+**Sert üst sınırlar (günde en fazla 3 madde, bütçe tavanı).** Ailenin kendi
+çocuğu için yükü belirlemesini engellerdi. Yerine tavsiye ve uyarı konur, karar
+velide kalır. Bedeli: çok yüksek bütçe seçen bir veli, ADR-0009'un anlattığı
+bırakma riskini üstlenir; bunu varsayılan değer (90 dk), uyarılar ve kapsama
+raporu hafifletir, engellemez.
 
 **Sabit rotasyon tabloları.** 5 güne ve 5 derse göre yazılmış tablo, serbest gün ve
 ders seçimiyle çalışmaz.

@@ -25,7 +25,7 @@ ilk sürümde plan üretmez.
 
 ## Çıktı
 
-Gün başına 2-3 madde. Her madde: ders + konu + kaynak + somut iş (sayfa/test) +
+Gün başına 2-3 madde (90 dk bütçede; sayı bütçeden türer, bkz. Güncelleme). Her madde: ders + konu + kaynak + somut iş (sayfa/test) +
 tahmini süre + üretim gerekçesi.
 
 ## Kurallar
@@ -52,7 +52,7 @@ Kesme kuralları:
 
 - Bütçe küçükse **önce Blok 3 düşer**. Okul ödevi asla düşmez.
 - Yapılmayan görev **birikmez**. Havuza döner, gelecek haftanın öncelik sırasına
-  girer; günlük madde sayısı hiçbir koşulda artmaz.
+  girer; günlük bütçe aşılmaz.
 - Motorun işi görev **eklemek değil, önceliklendirip kesmek**.
 
 ## Gerekçe
@@ -79,8 +79,11 @@ varsayım, matematik ≥3 gün + Türkçe ≥3 gün + Fen/Sosyal/İngilizce'nin 
 
 - **Yuva sayısı sabit değildir, hesaplanır:** çalışma günü sayısı × günlük blok
   sayısı. Gün sayısı ve bütçe veli ayarıdır (ADR-0013); haftada en fazla 6 gün.
-- **Günlük sınırlar değişmez:** günde en fazla 3 madde, bütçe aşılamaz. Yuva
-  eklemenin yolu gün eklemektir, günlük blok sayısını artırmak değildir.
+- **Günde en fazla 3 madde sınırı kalktı** (ADR-0013). Günlük blok ve madde sayısı
+  velinin verdiği bütçeden türer. Bütçe velinin kararıdır; uygulama tavsiye ve
+  uyarı verir, engellemez. Motor velinin verdiği bütçeyi aşmaz.
+- Yuva sayısı bu yüzden gün sayısına olduğu kadar bütçeye de bağlıdır: gün ya da
+  bütçe artınca yuva artar.
 - **Ders dağılımı kota tabanlıdır, sabit rotasyon değildir.** Seçili derslerin
   haftalık kotası müfredattaki konuma ve veli seçimine göre hesaplanır.
 - **Matematik ve Türkçe öncelikli, "≥3 gün" bir hedeftir, garanti değil.** Yuva

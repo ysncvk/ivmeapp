@@ -57,3 +57,12 @@ gerçeği, ama rakamı şişirmek ürünü çalışmaz hale getirir ve iptal ür
 - Veliye haftalık özet için WhatsApp/e-posta tercih edilir; iOS'ta PWA push
   kısıtları (Ana Ekrana Ekle şartı) nedeniyle de, açılma oranı nedeniyle de.
   Retansiyonu koruyan bildirim veliye gidendir, çocuğa gideni değil.
+
+## Güncelleme (2026-10-02, ADR-0013)
+
+Karar 2 ("bütçe aşılamaz kısıt") velinin **kendi verdiği bütçe** için geçerlidir.
+Veli bütçeyi serbestçe belirler; 2 saat üstü ve çok yüksek değerlerdeki uyarılar
+(karar 1) tavsiyedir, engel değildir. Günde en fazla 3 madde gibi sabit bir madde
+sınırı yoktur, madde sayısı bütçeden türer. Değişmeyenler: blok 20-30 dk, haftada
+en az bir tam boş gün (haftada en fazla 6 çalışma günü), kitap okumanın bütçe dışı
+olması, süre manşet metrik olmaması.
