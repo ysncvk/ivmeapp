@@ -43,7 +43,7 @@ describe("müfredat verisi", () => {
 		},
 	);
 
-	it("6. sınıf Türkçe: 6 tema, kaynak metindeki sırayla", () => {
+	it("6. sınıf Türkçe: 6 tema, planın sırasıyla", () => {
 		expect(turkce6.units.map((u) => u.title)).toEqual([
 			"Dilimizin Zenginliği",
 			"Bağımsızlık Yolu",
@@ -52,8 +52,9 @@ describe("müfredat verisi", () => {
 			"Bilim ve Teknoloji",
 			"Lider Ruhlar",
 		]);
+		// Her temada 4 metin (dönem)
 		expect(turkce6.units.map((u) => u.topics.length)).toEqual([
-			9, 9, 9, 10, 9, 10,
+			4, 4, 4, 4, 4, 4,
 		]);
 	});
 });
