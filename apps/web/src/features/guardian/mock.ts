@@ -1,4 +1,4 @@
-import type { ExamResult, Subject } from "@ivmeapp/core";
+import type { ExamResult, rewardProgress, Subject } from "@ivmeapp/core";
 
 /** Tasarım önizlemesi için örnek veri. Deneme için `core`'un ExamResult tipini kullanır. */
 
@@ -21,7 +21,7 @@ export interface HomeworkItem {
 	subject: Subject;
 	title: string;
 	due: string;
-	source: "teacher" | "guardian";
+	source: "teacher" | "guardian" | "student";
 	done: boolean;
 }
 
@@ -32,13 +32,21 @@ export interface RewardTier {
 	total: number;
 	threshold: number;
 	given?: boolean;
+	/** Sunucudan hazır gelen ilerleme; yoksa completed/total/threshold'dan hesaplanır. */
+	progress?: ReturnType<typeof rewardProgress>;
 }
 
 export interface ChildData {
 	id: string;
 	name: string;
-	week: { done: number; total: number; days: DayStat[] };
-	exam: ExamResult;
+	/** null: ücretli plan yok, haftalık görev sayısı gösterilmez. */
+	week: { done: number; total: number; days: DayStat[] } | null;
+	subscription?: {
+		hasAccess: boolean;
+		canStartTrial: boolean;
+		status: string | null;
+	};
+	exam: ExamResult | null;
 	weakTopics: WeakTopic[];
 	homework: HomeworkItem[];
 	rewards: RewardTier[];

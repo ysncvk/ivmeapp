@@ -1,4 +1,4 @@
-import { type PlanTask, rewardProgress } from "@ivmeapp/core";
+import type { PlanTask, rewardProgress, Subject } from "@ivmeapp/core";
 import { cn } from "@ivmeapp/ui/lib/utils";
 import {
 	BookMarked,
@@ -8,42 +8,57 @@ import {
 	PartyPopper,
 	Sparkles,
 } from "lucide-react";
-import { useMemo, useState } from "react";
 
 import { SUBJECTS } from "./subjects";
 
-interface Props {
-	studentName: string;
-	tasks: PlanTask[];
-	week: {
-		totalTasks: number;
-		completedBeforeToday: number;
-		threshold: number;
-		rewardTitle: string;
-	};
+export type TodayTask = PlanTask & { done: boolean };
+
+export interface TodayHomework {
+	id: string;
+	subject: Subject;
+	title: string;
+	dueDate: string | null;
+	source: "teacher" | "guardian" | "student";
+	done: boolean;
 }
 
+export interface TodayReward {
+	title: string;
+	tier: "daily" | "weekly" | "milestone";
+	progress: ReturnType<typeof rewardProgress>;
+}
+
+interface Props {
+	studentName: string;
+	tasks: TodayTask[];
+	homework?: TodayHomework[];
+	reward: TodayReward | null;
+	/** Ücretli plan yok: yalnızca ödevler gösterilir (ADR-0014). */
+	locked?: boolean;
+	onToggleTask: (id: string, done: boolean) => void;
+	onToggleHomework?: (id: string, done: boolean) => void;
+	onSignOut?: () => void;
+}
+
+const TIER_LABEL = {
+	daily: "Günlük ödül",
+	weekly: "Haftalık ödül",
+	milestone: "Büyük ödül",
+} as const;
+
 /** Süre bilinçli olarak gösterilmez: ekranda görev sayısı ve konu adı durur (ADR-0009). */
-export function TodayScreen({ studentName, tasks, week }: Props) {
-	const [done, setDone] = useState<ReadonlySet<string>>(new Set());
-
-	const toggle = (id: string) =>
-		setDone((prev) => {
-			const next = new Set(prev);
-			if (!next.delete(id)) next.add(id);
-			return next;
-		});
-
-	const allDone = tasks.length > 0 && done.size === tasks.length;
-	const progress = useMemo(
-		() =>
-			rewardProgress({
-				completed: week.completedBeforeToday + done.size,
-				total: week.totalTasks,
-				threshold: week.threshold,
-			}),
-		[week, done.size],
-	);
+export function TodayScreen({
+	studentName,
+	tasks,
+	homework = [],
+	reward,
+	locked = false,
+	onToggleTask,
+	onToggleHomework,
+	onSignOut,
+}: Props) {
+	const doneCount = tasks.filter((t) => t.done).length;
+	const allDone = tasks.length > 0 && doneCount === tasks.length;
 	const topics = [...new Set(tasks.map((t) => t.topic))];
 
 	return (
@@ -52,28 +67,73 @@ export function TodayScreen({ studentName, tasks, week }: Props) {
 				<Hero
 					name={studentName}
 					total={tasks.length}
-					done={done.size}
+					done={doneCount}
 					topics={topics}
 				/>
 
-				<RewardCard title={week.rewardTitle} progress={progress} />
+				{reward && <RewardCard reward={reward} />}
+
+				{locked && (
+					<p className="rounded-2xl bg-muted px-4 py-3 text-center font-semibold text-muted-foreground text-sm">
+						Günlük planın için velinle konuş. Ödevlerin aşağıda.
+					</p>
+				)}
 
 				<section aria-label="Bugünün görevleri" className="flex flex-col gap-3">
 					{tasks.map((task, i) => (
 						<TaskCard
 							key={task.id}
 							task={task}
-							checked={done.has(task.id)}
-							onToggle={() => toggle(task.id)}
+							checked={task.done}
+							onToggle={() => onToggleTask(task.id, !task.done)}
 							index={i}
 						/>
 					))}
 				</section>
 
 				{allDone && <DoneCard />}
+
+				{homework.length > 0 && (
+					<section aria-label="Ödevler" className="flex flex-col gap-3">
+						<h2 className="font-extrabold text-xl">Ödevler</h2>
+						{homework.map((h, i) => (
+							<TaskCard
+								key={h.id}
+								task={homeworkAsTask(h)}
+								checked={h.done}
+								onToggle={() => onToggleHomework?.(h.id, !h.done)}
+								index={i}
+							/>
+						))}
+					</section>
+				)}
+
+				{onSignOut && (
+					<button
+						type="button"
+						onClick={onSignOut}
+						className="mx-auto min-h-11 rounded-full px-5 font-bold text-muted-foreground text-sm outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+					>
+						Çıkış yap
+					</button>
+				)}
 			</main>
 		</div>
 	);
+}
+
+function homeworkAsTask(h: TodayHomework): PlanTask {
+	return {
+		id: h.id,
+		day: 0,
+		block: 0,
+		minutes: 0,
+		subject: h.subject,
+		topic: h.title,
+		resource: "",
+		work: h.dueDate ? `Teslim: ${h.dueDate}` : "Okul ödevi",
+		reason: { source: "homework", detail: "Okul ödevi" },
+	};
 }
 
 function Hero({
@@ -140,16 +200,11 @@ function Hero({
 	);
 }
 
-function RewardCard({
-	title,
-	progress,
-}: {
-	title: string;
-	progress: ReturnType<typeof rewardProgress>;
-}) {
+function RewardCard({ reward }: { reward: TodayReward }) {
+	const { title, progress } = reward;
 	return (
 		<section
-			aria-label="Haftalık ödül"
+			aria-label={TIER_LABEL[reward.tier]}
 			className="rounded-3xl border bg-card p-4 shadow-sm"
 		>
 			<div className="flex items-center gap-3">
@@ -162,7 +217,7 @@ function RewardCard({
 				</div>
 				<div className="min-w-0 flex-1">
 					<p className="font-bold text-muted-foreground text-xs uppercase tracking-wide">
-						Haftalık ödül
+						{TIER_LABEL[reward.tier]}
 					</p>
 					<p className="truncate font-extrabold text-lg">{title}</p>
 				</div>
@@ -245,7 +300,10 @@ function TaskCard({
 						{isHomework ? `${meta.label} · Okul ödevi` : meta.label}
 					</span>
 					{/* Küçük bilgi etiketi: manşet değil, toplam süre hiçbir yerde gösterilmez (ADR-0009). */}
-					<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2 py-0.5 font-bold text-[0.7rem] text-muted-foreground">
+					<span
+						hidden={task.minutes === 0}
+						className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2 py-0.5 font-bold text-[0.7rem] text-muted-foreground"
+					>
 						<Clock aria-hidden className="size-3" />
 						{task.minutes} dk
 					</span>

@@ -4,6 +4,7 @@ import {
 	CalendarDays,
 	Check,
 	GraduationCap,
+	LogOut,
 	Plus,
 	Settings,
 	Sparkles,
@@ -23,37 +24,89 @@ const dateFmt = new Intl.DateTimeFormat("tr-TR", {
 	month: "long",
 });
 
+export interface GuardianActions {
+	onAddChild?: () => void;
+	onSettings?: (childId: string) => void;
+	onSignOut?: () => void;
+	onStartTrial?: (childId: string) => void;
+	onAddHomework?: (childId: string) => void;
+	onToggleHomework?: (childId: string, id: string, done: boolean) => void;
+	onAddExam?: (childId: string) => void;
+	onEditRewards?: (childId: string) => void;
+	onGrant?: (childId: string, tier: RewardTier["tier"], given: boolean) => void;
+}
+
 export function GuardianScreen({
 	childProfiles,
+	actions = {},
+	activeId: controlledId,
+	onSelect,
 }: {
 	childProfiles: ChildData[];
+	actions?: GuardianActions;
+	activeId?: string;
+	onSelect?: (id: string) => void;
 }) {
-	const [activeId, setActiveId] = useState(childProfiles[0]?.id);
+	const [localId, setLocalId] = useState(childProfiles[0]?.id);
+	const activeId = controlledId ?? localId;
+	const setActiveId = (id: string) => {
+		setLocalId(id);
+		onSelect?.(id);
+	};
 	const child =
 		childProfiles.find((c) => c.id === activeId) ?? childProfiles[0];
-	if (!child) return null;
 
 	return (
 		<div className="min-h-svh bg-[radial-gradient(60rem_30rem_at_50%_-10%,color-mix(in_oklch,var(--ivme-violet)_10%,transparent),transparent)]">
 			<AppBar
 				childProfiles={childProfiles}
-				activeId={child.id}
+				activeId={child?.id}
 				onSelect={setActiveId}
+				actions={actions}
 			/>
 			<main className="mx-auto w-full max-w-md px-4 pt-4 pb-20 sm:max-w-xl md:max-w-4xl md:pt-6 lg:max-w-5xl">
-				<div className="grid gap-4 md:grid-cols-2 md:items-start md:gap-5">
-					<div className="flex flex-col gap-4 md:gap-5">
-						<WeekCard key={`w-${child.id}`} child={child} />
-						<RewardsCard key={`r-${child.id}`} rewards={child.rewards} />
+				{child ? (
+					<div className="grid gap-4 md:grid-cols-2 md:items-start md:gap-5">
+						<div className="flex flex-col gap-4 md:gap-5">
+							<WeekCard key={`w-${child.id}`} child={child} />
+							<RewardsCard
+								key={`r-${child.id}`}
+								childId={child.id}
+								rewards={child.rewards}
+								actions={actions}
+							/>
+						</div>
+						<div className="flex flex-col gap-4 md:gap-5">
+							<DiagnosisCard child={child} actions={actions} />
+							<PaywallCard child={child} actions={actions} />
+							<HomeworkCard child={child} actions={actions} />
+						</div>
 					</div>
-					<div className="flex flex-col gap-4 md:gap-5">
-						<DiagnosisCard child={child} />
-						<PaywallCard child={child} />
-						<HomeworkCard child={child} />
-					</div>
-				</div>
+				) : (
+					<EmptyChildren onAdd={actions.onAddChild} />
+				)}
 			</main>
 		</div>
+	);
+}
+
+function EmptyChildren({ onAdd }: { onAdd?: () => void }) {
+	return (
+		<section className="mx-auto mt-10 max-w-md rounded-3xl border bg-card p-6 text-center shadow-sm">
+			<UserRound aria-hidden className="mx-auto size-10 text-primary" />
+			<h2 className="mt-3 font-extrabold text-xl">Çocuğunu ekle</h2>
+			<p className="mt-1 text-muted-foreground text-sm">
+				Ad, kullanıcı adı ve şifre yeter. Çocuğun e-posta ya da kimlik bilgisi
+				girmez.
+			</p>
+			<button
+				type="button"
+				onClick={onAdd}
+				className="mt-4 min-h-12 rounded-2xl bg-primary px-6 font-extrabold text-primary-foreground"
+			>
+				Çocuk ekle
+			</button>
+		</section>
 	);
 }
 
@@ -61,10 +114,12 @@ function AppBar({
 	childProfiles,
 	activeId,
 	onSelect,
+	actions,
 }: {
 	childProfiles: ChildData[];
-	activeId: string;
+	activeId?: string;
 	onSelect: (id: string) => void;
+	actions: GuardianActions;
 }) {
 	return (
 		<header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur">
@@ -103,9 +158,30 @@ function AppBar({
 							</button>
 						))}
 					</nav>
+					{actions.onAddChild && (
+						<button
+							type="button"
+							aria-label="Çocuk ekle"
+							onClick={actions.onAddChild}
+							className="grid size-10 place-items-center rounded-full text-muted-foreground outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+						>
+							<Plus className="size-5" />
+						</button>
+					)}
+					{actions.onSignOut && (
+						<button
+							type="button"
+							aria-label="Çıkış yap"
+							onClick={actions.onSignOut}
+							className="grid size-10 place-items-center rounded-full text-muted-foreground outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+						>
+							<LogOut className="size-5" />
+						</button>
+					)}
 					<button
 						type="button"
 						aria-label="Ayarlar"
+						onClick={() => activeId && actions.onSettings?.(activeId)}
 						className="grid size-10 place-items-center rounded-full text-muted-foreground outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
 					>
 						<Settings className="size-5" />
@@ -139,6 +215,19 @@ function Card({
 }
 
 function WeekCard({ child }: { child: ChildData }) {
+	if (!child.week) {
+		return (
+			<Card
+				title={`${child.name}, bu hafta`}
+				hint="Haftalık plan Bireysel Koçluk ile açılır"
+			>
+				<p className="mt-3 text-muted-foreground text-sm">
+					Ödev takibi ücretsiz çalışır. Gün gün plan için aşağıdaki denemeyi
+					başlatabilirsiniz.
+				</p>
+			</Card>
+		);
+	}
 	const { done, total } = child.week;
 	const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 	return (
@@ -159,8 +248,31 @@ function WeekCard({ child }: { child: ChildData }) {
 	);
 }
 
-function DiagnosisCard({ child }: { child: ChildData }) {
+function DiagnosisCard({
+	child,
+	actions,
+}: {
+	child: ChildData;
+	actions: GuardianActions;
+}) {
 	const { exam, weakTopics } = child;
+	if (!exam) {
+		return (
+			<Card
+				title="Deneme sonucu"
+				hint="Deneme girin, zayıf konuları birlikte görelim"
+			>
+				<button
+					type="button"
+					onClick={() => actions.onAddExam?.(child.id)}
+					className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-bold text-sm outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+				>
+					<Plus className="size-4" />
+					Deneme ekle
+				</button>
+			</Card>
+		);
+	}
 	return (
 		<Card
 			title="Son deneme"
@@ -199,18 +311,36 @@ function DiagnosisCard({ child }: { child: ChildData }) {
 					</ul>
 				)}
 			</div>
+			<button
+				type="button"
+				onClick={() => actions.onAddExam?.(child.id)}
+				className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-bold text-sm outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+			>
+				<Plus className="size-4" />
+				Deneme ekle
+			</button>
 		</Card>
 	);
 }
 
 /** ADR-0006/0014: ücretsiz teşhisten ücretli plana şeffaf geçiş, ödev takibi ücretsiz kalır. */
-function PaywallCard({ child }: { child: ChildData }) {
+function PaywallCard({
+	child,
+	actions,
+}: {
+	child: ChildData;
+	actions: GuardianActions;
+}) {
+	// Plan erişimi varsa ya da önizlemede abonelik bilgisi yoksa kart gösterilmez
+	if (!child.subscription || child.subscription.hasAccess) return null;
 	const topics = child.weakTopics.slice(0, 2).map((w) => w.topic);
-	if (topics.length === 0) return null;
 	const lead =
-		topics.length === 1
-			? `${topics[0]} konusunda zayıf görünüyor.`
-			: `${topics.join(" ve ")} konularında zayıf görünüyor.`;
+		topics.length === 0
+			? "için haftalık plan hazırlayalım."
+			: topics.length === 1
+				? `${topics[0]} konusunda zayıf görünüyor.`
+				: `${topics.join(" ve ")} konularında zayıf görünüyor.`;
+	const canTrial = child.subscription.canStartTrial;
 	return (
 		<section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ivme-indigo-deep via-[oklch(0.42_0.18_280)] to-ivme-violet p-5 text-white shadow-lg shadow-primary/20">
 			<div
@@ -226,12 +356,19 @@ function PaywallCard({ child }: { child: ChildData }) {
 					Bu konular için haftalık program oluştur: kitap, sayfa ve test
 					numarasıyla, gün gün.
 				</p>
-				<button
-					type="button"
-					className="mt-4 min-h-12 w-full rounded-2xl bg-white px-5 font-extrabold text-ivme-indigo-deep outline-none transition-transform focus-visible:ring-4 focus-visible:ring-white/50 active:scale-[0.98]"
-				>
-					Bireysel Koçluk'u bir hafta dene
-				</button>
+				{canTrial ? (
+					<button
+						type="button"
+						onClick={() => actions.onStartTrial?.(child.id)}
+						className="mt-4 min-h-12 w-full rounded-2xl bg-white px-5 font-extrabold text-ivme-indigo-deep outline-none transition-transform focus-visible:ring-4 focus-visible:ring-white/50 active:scale-[0.98]"
+					>
+						Bireysel Koçluk'u bir hafta dene
+					</button>
+				) : (
+					<p className="mt-4 rounded-2xl bg-white/15 px-4 py-3 text-center font-bold text-sm">
+						Deneme süresi bitti. Abonelik seçenekleri yakında.
+					</p>
+				)}
 				<p className="mt-2 text-center text-white/70 text-xs">
 					Kart bilgisi gerekmez. Ödev takibi her zaman ücretsizdir.
 				</p>
@@ -240,9 +377,18 @@ function PaywallCard({ child }: { child: ChildData }) {
 	);
 }
 
-function HomeworkCard({ child }: { child: ChildData }) {
+function HomeworkCard({
+	child,
+	actions,
+}: {
+	child: ChildData;
+	actions: GuardianActions;
+}) {
 	return (
 		<Card title="Ödevler" hint="Öğretmenin verdiği ve senin eklediğin ödevler">
+			{child.homework.length === 0 && (
+				<p className="mt-3 text-muted-foreground text-sm">Açık ödev yok.</p>
+			)}
 			<ul className="mt-3 flex flex-col gap-2">
 				{child.homework.map((h) => {
 					const meta = SUBJECTS[h.subject];
@@ -276,25 +422,36 @@ function HomeworkCard({ child }: { child: ChildData }) {
 									) : (
 										<UserRound aria-hidden className="size-3.5" />
 									)}
-									{h.source === "teacher" ? "Öğretmen" : "Veli"} · {h.due}
+									{h.source === "teacher"
+										? "Öğretmen"
+										: h.source === "guardian"
+											? "Veli"
+											: "Öğrenci"}{" "}
+									· {h.due}
 								</span>
 							</span>
-							<span
+							<button
+								type="button"
+								aria-pressed={h.done}
+								onClick={() =>
+									actions.onToggleHomework?.(child.id, h.id, !h.done)
+								}
 								className={cn(
-									"shrink-0 rounded-full px-2.5 py-1 font-bold text-xs",
+									"min-h-9 shrink-0 rounded-full px-3 font-bold text-xs outline-none focus-visible:ring-4 focus-visible:ring-ring/40",
 									h.done
 										? "bg-primary/10 text-primary"
 										: "bg-muted text-muted-foreground",
 								)}
 							>
 								{h.done ? "Yapıldı" : "Bekliyor"}
-							</span>
+							</button>
 						</li>
 					);
 				})}
 			</ul>
 			<button
 				type="button"
+				onClick={() => actions.onAddHomework?.(child.id)}
 				className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-bold text-sm outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
 			>
 				<Plus className="size-4" />
@@ -311,17 +468,34 @@ const TIERS = {
 } as const;
 
 /** ADR-0016: ödülü veli tanımlar ve teslim eder; hedef tamamlama oranıdır. */
-function RewardsCard({ rewards }: { rewards: RewardTier[] }) {
-	const [given, setGiven] = useState<ReadonlySet<string>>(new Set());
+function RewardsCard({
+	childId,
+	rewards,
+	actions,
+}: {
+	childId: string;
+	rewards: RewardTier[];
+	actions: GuardianActions;
+}) {
+	const [given, setGiven] = useState<ReadonlySet<string>>(
+		new Set(rewards.filter((r) => r.given).map((r) => r.tier)),
+	);
 	return (
 		<Card title="Ödüller" hint="Hedef: planın tamamlama oranı">
+			{rewards.length === 0 && (
+				<p className="mt-3 text-muted-foreground text-sm">
+					Henüz ödül tanımlanmadı. Çocuğun sevdiği bir ödül seç.
+				</p>
+			)}
 			<ul className="mt-3 flex flex-col gap-3">
 				{rewards.map((r) => {
-					const p = rewardProgress({
-						completed: r.completed,
-						total: r.total,
-						threshold: r.threshold,
-					});
+					const p =
+						r.progress ??
+						rewardProgress({
+							completed: r.completed,
+							total: r.total,
+							threshold: r.threshold,
+						});
 					const t = TIERS[r.tier];
 					const Icon = t.icon;
 					const isGiven = given.has(r.tier);
@@ -367,13 +541,14 @@ function RewardsCard({ rewards }: { rewards: RewardTier[] }) {
 									<button
 										type="button"
 										aria-pressed={isGiven}
-										onClick={() =>
+										onClick={() => {
+											actions.onGrant?.(childId, r.tier, !isGiven);
 											setGiven((prev) => {
 												const next = new Set(prev);
 												if (!next.delete(r.tier)) next.add(r.tier);
 												return next;
-											})
-										}
+											});
+										}}
 										className={cn(
 											"inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 font-bold text-sm outline-none focus-visible:ring-4 focus-visible:ring-ring/40",
 											isGiven
@@ -392,6 +567,7 @@ function RewardsCard({ rewards }: { rewards: RewardTier[] }) {
 			</ul>
 			<button
 				type="button"
+				onClick={() => actions.onEditRewards?.(childId)}
 				className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-bold text-sm outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
 			>
 				<Settings className="size-4" />
