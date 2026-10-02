@@ -26,6 +26,14 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
      "Kesintisiz kaç dakika dikkatli çalışabiliyor?" Uygulama 25-30 dk tavsiye
      eder, veli seçer. Çok kısa ya da çok uzun değerlerde uyarı çıkar, engel
      yoktur (eşikler uygulama sırasında belirlenir).
+   - **Boş zaman tercihi.** Çocuk profili eklenirken veliye sorulur: plan günlük
+     bütçeyi doldurmadan biterse (haftanın konusu ve zayıf konu işleri tükendi ya
+     da kaynak az) kalan süre ne olsun? Seçenekler: **genel tekrar** (aralıklı
+     tekrar havuzundan, varsayılan), **ek kitap okuma** (ADR-0009 madde 6'daki
+     günlük 30 dk'ya ek; çocuk seçer, sınanmaz) ya da **boş kalsın**. Süre bu
+     şekilde artınca ayrıca "yeni kaynak eklemek ister misiniz?" önerisi gösterilir
+     (ADR-0004). Motor boşluğu yeni görev uydurarak doldurmaz: ya havuzdaki
+     işlerden çeker ya da boş bırakır (ADR-0005).
    - **Dersler.** Her ders plana açılıp kapatılabilir. Matematik veya Türkçe
      kapatılırsa uyarı çıkar, engellenmez.
    - **Kaynaklar.** Kütüphaneden (ADR-0004) seçilir. Hiç seçilmezse MEB ders
