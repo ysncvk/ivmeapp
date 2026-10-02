@@ -4,10 +4,12 @@ import { fenomen6FenA } from "./books/fenomen-6-fen-a";
 import { fenomen6MatematikA } from "./books/fenomen-6-matematik-a";
 import { fenomen6ParagrafA } from "./books/fenomen-6-paragraf-a";
 import { fenomen6ParagrafB } from "./books/fenomen-6-paragraf-b";
+import { fen6 } from "./curriculum/fen-6";
 import { matematik6 } from "./curriculum/matematik-6";
 import { turkce6 } from "./curriculum/turkce-6";
 
 export {
+	fen6,
 	fenomen6FenA,
 	fenomen6MatematikA,
 	fenomen6ParagrafA,
@@ -25,4 +27,4 @@ export const books: readonly SourceBook[] = [
 ];
 
 /** Kütüphanedeki tüm müfredatlar (yıllık planlar). */
-export const curricula: readonly Curriculum[] = [turkce6, matematik6];
+export const curricula: readonly Curriculum[] = [turkce6, matematik6, fen6];

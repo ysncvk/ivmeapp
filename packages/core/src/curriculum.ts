@@ -23,6 +23,38 @@ export interface CurriculumUnit {
 	topics: CurriculumTopic[];
 }
 
+export interface CurriculumOutcome {
+	/** Kazanım kodu, örn. "FB.6.2.1.1". */
+	code: string;
+	title: string;
+}
+
+export interface CurriculumWeek {
+	/** Eğitim yılı içindeki hafta numarası, 1'den başlar. */
+	week: number;
+	/** Pazartesi, YYYY-MM-DD. */
+	start: string;
+	/** Cuma, YYYY-MM-DD. */
+	end: string;
+	/** Ders saati, programdaki gibi (örn. "4", "2+2"). */
+	hours: string;
+	/** Haftada işlenen üniteler (genellikle bir, ünite geçişinde iki). */
+	unitIds: string[];
+	/** Ünite konularından (`CurriculumTopic.title`) bu hafta işlenenler. */
+	topics: string[];
+	outcomes: CurriculumOutcome[];
+	/** Okul temelli planlamaya ayrılan saat. */
+	otpHours?: number;
+	note?: string;
+}
+
+/** Tarih aralığı: tatil, bayram ya da sınav dönemi (uçlar dahil). */
+export interface CurriculumPeriod {
+	title: string;
+	start: string;
+	end: string;
+}
+
 export interface Curriculum {
 	id: string;
 	subject: Subject;
@@ -35,6 +67,12 @@ export interface Curriculum {
 	/** Okul temelli planlamaya ayrılan saat; ünitelere dahil değildir. */
 	schoolBasedHours?: number;
 	units: CurriculumUnit[];
+	/** Hafta hafta yıllık plan (varsa). Tatil haftaları listede yoktur. */
+	weeks?: CurriculumWeek[];
+	/** Ara tatiller ve bayramlar. */
+	breaks?: CurriculumPeriod[];
+	/** Okul sınav dönemleri. */
+	examPeriods?: CurriculumPeriod[];
 }
 
 const FOLD: Record<string, string> = {
@@ -94,7 +132,14 @@ export function weeklyPool(
 	unit: CurriculumUnit,
 	items: readonly WorkItem[],
 ): WeeklyPool {
-	const keys = phrases(unit);
+	return poolFrom(phrases(unit), items);
+}
+
+/** İfade listesine göre havuzu böler: eşleşenler öne, kalanlar arkaya, hiçbiri düşmez. */
+function poolFrom(
+	keys: readonly string[],
+	items: readonly WorkItem[],
+): WeeklyPool {
 	const matched: WorkItem[] = [];
 	const others: WorkItem[] = [];
 	for (const item of items) {
@@ -115,6 +160,31 @@ export function validateCurriculum(c: Curriculum): string[] {
 			errors.push(`${u.id}: sıra ${u.order}, beklenen ${i + 1}`);
 		if (u.topics.length === 0) errors.push(`${u.id}: konu yok`);
 	});
+	const unitIds = new Set(c.units.map((u) => u.id));
+	(c.weeks ?? []).forEach((w, i) => {
+		if (w.week !== i + 1)
+			errors.push(`Hafta ${w.week}: sıra ${i + 1} bekleniyordu`);
+		if (w.start > w.end)
+			errors.push(`Hafta ${w.week}: başlangıç bitişten sonra`);
+		if (i > 0 && (c.weeks?.[i - 1]?.end ?? "") >= w.start) {
+			errors.push(`Hafta ${w.week}: önceki haftayla çakışıyor`);
+		}
+		if (w.unitIds.length === 0) errors.push(`Hafta ${w.week}: ünite yok`);
+		if (w.outcomes.length === 0) errors.push(`Hafta ${w.week}: kazanım yok`);
+		for (const id of w.unitIds) {
+			if (!unitIds.has(id))
+				errors.push(`Hafta ${w.week}: bilinmeyen ünite ${id}`);
+		}
+		for (const title of w.topics) {
+			const known = c.units
+				.filter((u) => w.unitIds.includes(u.id))
+				.some((u) =>
+					u.topics.some((t) => normalizeTr(t.title) === normalizeTr(title)),
+				);
+			if (!known)
+				errors.push(`Hafta ${w.week}: ünite konularında yok: ${title}`);
+		}
+	});
 	const hours =
 		c.units.reduce((sum, u) => sum + (u.hours ?? 0), 0) +
 		(c.schoolBasedHours ?? 0);
@@ -122,4 +192,57 @@ export function validateCurriculum(c: Curriculum): string[] {
 		errors.push("Ders saatleri toplamı sıfır");
 	}
 	return errors;
+}
+
+function addDays(iso: string, n: number): string {
+	const d = new Date(`${iso}T00:00:00Z`);
+	d.setUTCDate(d.getUTCDate() + n);
+	return d.toISOString().slice(0, 10);
+}
+
+/** Tarihe (YYYY-MM-DD) denk gelen hafta; hafta sonu da o haftaya sayılır. Tatilde yoktur. */
+export function weekFor(
+	c: Curriculum,
+	date: string,
+): CurriculumWeek | undefined {
+	return c.weeks?.find((w) => w.start <= date && date <= addDays(w.end, 2));
+}
+
+/** Tarih verilen dönemlerden birindeyse o dönem (tatil, sınav haftası). */
+export function periodFor(
+	periods: readonly CurriculumPeriod[] | undefined,
+	date: string,
+): CurriculumPeriod | undefined {
+	return periods?.find((p) => p.start <= date && date <= p.end);
+}
+
+/** Bir ünitenin işlendiği son hafta; ünite sonu "Bağlam Temelli" testler için. */
+function lastWeekOf(c: Curriculum, unitId: string): number | undefined {
+	const weeks = (c.weeks ?? []).filter((w) => w.unitIds.includes(unitId));
+	return weeks.length > 0 ? Math.max(...weeks.map((w) => w.week)) : undefined;
+}
+
+/**
+ * Haftanın konularına göre kitap havuzu: haftanın konularıyla eşleşen testler öne alınır;
+ * ünitenin son haftasında ünite sonu "Bağlam Temelli" testler de eşleşir.
+ */
+export function weekPool(
+	c: Curriculum,
+	week: CurriculumWeek,
+	items: readonly WorkItem[],
+): WeeklyPool {
+	const keys: string[] = [];
+	for (const title of week.topics) {
+		const t = normalizeTr(title);
+		for (const unit of c.units) {
+			for (const topic of unit.topics) {
+				if (normalizeTr(topic.title) === t) keys.push(...(topic.match ?? []));
+			}
+		}
+	}
+	for (const id of week.unitIds) {
+		const unit = c.units.find((u) => u.id === id);
+		if (unit && lastWeekOf(c, id) === week.week) keys.push(`(${unit.title})`);
+	}
+	return poolFrom(keys.map(normalizeTr), items);
 }
