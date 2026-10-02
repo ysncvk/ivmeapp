@@ -1,0 +1,3 @@
+{
+  "extends": "@ivmeapp/config/tsconfig.base.json"
+}
