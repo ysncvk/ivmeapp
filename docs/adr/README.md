@@ -25,6 +25,7 @@ Kurallar:
 | [0010](0010-cocuk-verisi-ve-erisim.md) | Çocuk verisi ve erişim kontrolü ilkeleri | Kabul |
 | [0011](0011-teknoloji-yigini.md) | Teknoloji yığını ve repo yapısı | Kabul |
 | [0012](0012-kimlik-ve-oturum-modeli.md) | Kimlik ve oturum modeli | Kabul |
+| [0013](0013-plan-ayarlari-ve-dinamik-plan.md) | Plan ayarları ve dinamik plan kuralları (0005/0009'u kısmen değiştirir) | Önerildi |
 
 ## Açık kalanlar
 
