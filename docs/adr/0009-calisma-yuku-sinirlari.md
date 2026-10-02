@@ -63,6 +63,8 @@ gerçeği, ama rakamı şişirmek ürünü çalışmaz hale getirir ve iptal ür
 Karar 2 ("bütçe aşılamaz kısıt") velinin **kendi verdiği bütçe** için geçerlidir.
 Veli bütçeyi serbestçe belirler; 2 saat üstü ve çok yüksek değerlerdeki uyarılar
 (karar 1) tavsiyedir, engel değildir. Günde en fazla 3 madde gibi sabit bir madde
-sınırı yoktur, madde sayısı bütçeden türer. Değişmeyenler: blok 20-30 dk, haftada
+sınırı yoktur, madde sayısı bütçeden türer. Blok süresi (karar 3) çocuğa özeldir: veli çocuk profilinde "kesintisiz kaç dakika
+dikkatli çalışıyor" sorusunu yanıtlar, uygulama 25-30 dk tavsiye eder, 20-30 dk
+aralığı artık tavsiyedir, sabit sınır değil. Değişmeyenler: haftada
 en az bir tam boş gün (haftada en fazla 6 çalışma günü), kitap okumanın bütçe dışı
 olması, süre manşet metrik olmaması.

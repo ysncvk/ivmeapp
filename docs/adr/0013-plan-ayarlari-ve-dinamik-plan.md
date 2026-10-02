@@ -21,6 +21,10 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
    - **Çalışma günleri.** Önerilen: haftada **6 gün** (Pazartesi-Cumartesi,
      Pazar boş). Veli azaltabilir.
    - **Günlük bütçe.** Varsayılan 90 dk (ADR-0009 değişmedi).
+   - **Blok süresi.** Çocuğa özeldir. Çocuk profili eklenirken veliye sorulur:
+     "Kesintisiz kaç dakika dikkatli çalışabiliyor?" Uygulama 25-30 dk tavsiye
+     eder, veli seçer. Çok kısa ya da çok uzun değerlerde uyarı çıkar, engel
+     yoktur (eşikler uygulama sırasında belirlenir).
    - **Dersler.** Her ders plana açılıp kapatılabilir. Matematik veya Türkçe
      kapatılırsa uyarı çıkar, engellenmez.
    - **Kaynaklar.** Kütüphaneden (ADR-0004) seçilir. Hiç seçilmezse MEB ders
@@ -31,8 +35,8 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
    türer (örn. 90 dk ≈ 3 blok, 180 dk ≈ 6 blok). Bütçe için ADR-0009'daki uyarı
    seviyeleri (2 saat üstü uyarı, çok yüksekte daha açık uyarı) **tavsiyedir,
    engel değildir**. Motor yine velinin verdiği bütçeyi aşmaz ve görev eklemez.
-   Değişmeyen kısıtlar: blok 20-30 dk, okul ödevi düşmez, **haftada en az bir
-   gün tamamen boş**. ADR-0009 madde 4'ün "hafta içi 5 gün" kuralı yerine:
+   Değişmeyen kısıtlar: okul ödevi düşmez (bütçeye sığmazsa gizlenmez, velinin
+   önüne uyarıyla çıkar), **haftada en az bir gün tamamen boş**. ADR-0009 madde 4'ün "hafta içi 5 gün" kuralı yerine:
    *haftada en fazla 6 çalışma günü, en az bir gün tam boş.*
 3. **Motor kota tabanlıdır.** Seçili derslerin haftalık yuva kotası (müfredattaki
    konum ve veli seçimine göre) hesaplanır, yuvalar günlere yayılır; aynı ders art
@@ -97,6 +101,8 @@ ders seçimiyle çalışmaz.
 - `packages/core`: ayar tipleri (`PlanSettings`), kota tabanlı dağıtım, kapsama
   raporu, taşıma kuralı; mevcut rotasyon kodu ve testleri bu karara göre
   güncellenir. Bütçe, madde sınırı ve ödev testleri aynen geçerli kalır.
+- Veri modeli: çocuk profilinde blok süresi (dikkat süresi) alanı; plan üretimi
+  için gereken veridir, ADR-0010 madde 1'e uygundur.
 - Veri modeli: görev taşıma geçmişi (kim, ne zaman, hangi günden hangi güne)
   tutulur (erişim kaydı ilkesi, ADR-0010).
 - Kabul edildiğinde ADR-0005 ve ADR-0009'un durumu *"Kabul (kısmen değiştirildi:
