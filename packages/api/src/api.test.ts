@@ -1,6 +1,12 @@
 import { createAuth } from "@ivmeapp/auth";
+import { addDays } from "@ivmeapp/core";
 import { user } from "@ivmeapp/db/schema/auth";
-import { accessLog, plan, planTask } from "@ivmeapp/db/schema/domain";
+import {
+	accessLog,
+	plan,
+	planTask,
+	subscription,
+} from "@ivmeapp/db/schema/domain";
 import {
 	createTestDatabase,
 	type TestDatabase,
@@ -437,4 +443,46 @@ describe("bakım işleri", () => {
 			.where(eq(plan.childId, child.id));
 		expect(left).toHaveLength(0);
 	});
+});
+
+describe("tüm eğitim yılı", () => {
+	it("üç ders için her hafta plan kurulur, bütçe ve gün sınırı aşılmaz", async () => {
+		const { g, child } = await family();
+		await call(
+			appRouter.children.settings.update,
+			{ childId: child.id, sources: BOOKS },
+			{ context: g },
+		);
+		// Sabit saatle yıl boyunca deneme açık kalsın
+		await t.db.insert(subscription).values({
+			childId: child.id,
+			status: "active",
+			currentPeriodEnd: new Date("2028-01-01T00:00:00Z"),
+		});
+		const empty: string[] = [];
+		let weeks = 0;
+		for (let w = 0; w < 40; w++) {
+			const weekStart = addDays("2026-09-14", 7 * w);
+			const res = await call(
+				appRouter.plan.week,
+				{ childId: child.id, weekStart },
+				{ context: g },
+			);
+			weeks++;
+			const days = res.plan?.days ?? [];
+			const tasks = days.flatMap((d) => d.tasks);
+			if (tasks.length === 0) empty.push(weekStart);
+			for (const d of days) {
+				expect(d.tasks.reduce((s, x) => s + x.minutes, 0)).toBeLessThanOrEqual(
+					res.plan?.settings.dailyBudgetMinutes ?? 0,
+				);
+			}
+			// aynı görev bir haftada iki kez bulunmaz
+			const keys = tasks.map((x) => `${x.subject}|${x.topic}|${x.work}`);
+			expect(new Set(keys).size).toBe(keys.length);
+		}
+		expect(weeks).toBe(40);
+		// Yalnızca tatil haftaları boş olabilir (ara tatiller + yaz); okul haftalarının çoğu doludur
+		expect(empty.length).toBeLessThan(10);
+	}, 120_000);
 });
