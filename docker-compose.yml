@@ -1,0 +1,21 @@
+# Yerel geliştirme veritabanı. Üretim için DEĞİL (ADR-0010 madde 7: ticari sürüm
+# ev sunucusunda çalışmaz).
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ivme
+      POSTGRES_PASSWORD: ivme
+      POSTGRES_DB: ivmeapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - ivmeapp-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ivme -d ivmeapp"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  ivmeapp-pgdata:
