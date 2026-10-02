@@ -31,8 +31,9 @@ Kurallar:
 
 ## Açık kalanlar
 
-- Marka adı. `ivmeapp.com` müsait, TÜRKPATENT sınıf 9 ve 41 araması yapılmadı.
-  Yedek: Rahvan. Çocuk tarafındaki karakter adı ayrı bir karar (öneri: Sofya).
+- Marka adı **İvme** (`ivmeapp.com`) olarak kullanılıyor. TÜRKPATENT sınıf 9 ve 41
+  araması hâlâ yapılmadı, yayından önce yapılmalı. Yedek: Rahvan. Çocuk tarafındaki
+  karakter adı ayrı bir karar (öneri: Sofya).
 - Öğretmenin mobilde yapabileceklerinin tam sınırı (ADR-0008'de çerçeve var,
   ekran bazında netleşmedi).
 - İkincil veli: aynı çocuğu birden fazla veli görebilsin mi (ADR-0012, v1'de tek veli).
