@@ -67,5 +67,5 @@ sınırı yoktur, madde sayısı bütçeden türer. Blok süresi (karar 3) çocu
 dikkatli çalışıyor" sorusunu yanıtlar, uygulama 25-30 dk tavsiye eder, 20-30 dk
 aralığı artık tavsiyedir, sabit sınır değil. Çalışma günü sayısı ve tam boş gün de artık veliye sorulan ayardır; uygulama
 varsayılan ve tavsiye verir (6 gün, en az bir tam boş gün), engellemez.
-Değişmeyenler: okul ödevi düşmez (karar 5'teki önceliği korur), kitap okumanın
+Değişmeyenler: okul ödevi düşmez (ADR-0005 kesme kuralı), kitap okumanın
 bütçe dışı olması, sürenin çocuğun ekranında manşet metrik olmaması.
