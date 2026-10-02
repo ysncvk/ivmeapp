@@ -83,3 +83,22 @@ yaratır; ADR-0010'daki aile ayarlarının öğretmene kapalı olması ilkesine 
 - **Öğretmen davet mesajı:** öğretmene hazır bir davet metni sunulur; ödev
   takibinin ücretsiz olduğunu ve kart bilgisi gerekmediğini belirtir. Metin hukuk
   gözden geçirmesinden geçer.
+
+## Güncelleme (2026-10-02): konu haritası, fiyat birimi, iptal
+
+- **Aylık konu haritası ücretlidir** (ADR-0013 madde 8): "ne çalışmalı" sorusunu
+  cevapladığı için plan tarafındadır. Ücretsiz katman: ödev takibi (öğretmen ya da
+  veli girer), manuel deneme girişi, grafikler, ders/konu dağılımı ve zayıf konu
+  teşhisi. Ücretli: konu haritası ve gün gün plan.
+- **Abonelik çocuk başınadır,** aile başına değil. Katman yetkisi çocuk
+  profili düzeyinde kontrol edilir (madde 9'daki tek yetki katmanı çocuk bazında
+  çalışır). Birden fazla çocuk için indirim ya da paket sonraya kalır.
+- **İptal.** Abonelik biterse ücretsiz katmana dönülür, plan üretimi durur.
+  Ücretli kullanıma ait veri (plan ayarları, kaynak seçimleri, plan geçmişi, taşıma
+  kayıtları) **6 ay saklanır;** bu sürede yeniden abone olunursa kaldığı yerden
+  devam edilir, olunmazsa silinir. Ödev, deneme ve profil verisi ücretsiz katmanda
+  zaten devam eder. Bu, hesap silme değildir: veli hesabı silerse çocuğa ait tüm
+  veri hemen silinir (ADR-0010 madde 3). 6 ay süresi ve aydınlatma metnindeki yeri
+  hukuk onayına bağlıdır.
+- Fiyat (300-500 TL aralığı konuşuldu) ve yıllık paket indirimi açık kalmaya devam
+  eder.

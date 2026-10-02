@@ -91,6 +91,11 @@ kalan nokta ayrı ayrı yazılsın. Kesin olmayan yerde bunun belirtilmesi isten
     kullanılırsa: yurt dışı aktarım şartları, sağlayıcıyla eğitimde kullanılmama ve
     saklama süresi sözleşmesi, aydınlatma metnine ekleme ve açık rıza gerekir mi?
 
+16. **Abonelik iptalinden sonra saklama.** Ücretli kullanıma ait veri (plan
+    ayarları, kaynak seçimleri, plan geçmişi) iptalden sonra 6 ay saklanıp
+    yeniden abone olunmazsa siliniyor. Bu süre amaç sınırlaması ve veri
+    minimizasyonu açısından savunulabilir mi, aydınlatma metninde nasıl yer almalı?
+
 > Not: Bu soruların bir kısmı başka bir yapay zekâ ile yapılan ön
 > değerlendirmeden geldi; o değerlendirmedeki "risk neredeyse sıfır" gibi
 > ifadeler kesin hüküm değildir ve avukat teyidi gerektirir.

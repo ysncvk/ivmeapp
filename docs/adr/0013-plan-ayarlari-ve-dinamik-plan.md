@@ -70,7 +70,7 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
 7. **Okul ödevi hafta içinde girilebilir.** Girilen gün Blok 1'i alır; yerindeki
    görev havuza döner. Bu, ADR-0005'teki "plan hafta içinde değişmez" kuralının
    tek tanımlı istisnasıdır (ödev planın dışından gelen bir gerçektir).
-8. **Aylık görünüm, haftalık detay.** Veliye, yıllık plandan gelen en fazla 4
+8. **Aylık görünüm, haftalık detay** (ücretli, ADR-0014). Veliye, yıllık plandan gelen en fazla 4
    haftalık *konu haritası* (hangi hafta hangi konu) gösterilir. Somut görevler
    (kaynak, sayfa, test no) her hafta başında, son denemeye göre üretilir.
 9. **Cumartesi:** deneme yapılan hafta Cumartesi deneme + yanlış analizi günüdür
