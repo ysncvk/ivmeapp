@@ -17,29 +17,42 @@ export interface WorkItem {
 	id: string;
 	subject: Subject;
 	topic: string;
-	/** Örn. "Karekök" */
+	/** Örn. "Karekök Matematik" */
 	resource: string;
 	/** Örn. "s.84 Test 12" */
 	work: string;
-	/** Geçen haftadan kalan iş: öncelik sırasında öne alınır, görev sayısını artırmaz. */
+	/** Geçen haftadan kalan iş: öncelik sırasında öne alınır, bütçeyi aşmaz (ADR-0013). */
 	carriedOver?: boolean;
 }
 
 export interface Homework {
-	/** ISO hafta günü: 1 = Pazartesi ... 5 = Cuma */
+	/** ISO hafta günü: 1 = Pazartesi ... 7 = Pazar */
 	day: number;
 	subject: Subject;
 	topic: string;
 	work: string;
 }
 
-export interface PlanInput {
+/** Boş kalan süre için veli tercihi (ADR-0013). */
+export type IdleTime = "review" | "reading" | "free";
+
+/** Veli ve çocuk profilinden gelen ayarlar (ADR-0013). */
+export interface PlanSettings {
 	/** Haftanın başlangıç tarihi (YYYY-MM-DD). Motor tarih hesabı yapmaz, taşır. */
 	weekStart: string;
-	/** Günlük bütçe, dakika. Aşılamaz kısıttır (ADR-0009). */
+	/** ISO hafta günleri, 1-7. Tavsiye: Pazartesi-Cumartesi. */
+	studyDays: readonly number[];
+	/** Günlük bütçe, dakika. Motor bunu aşmaz. */
 	dailyBudgetMinutes: number;
-	/** ISO hafta günleri, 1-5. Varsayılan [1,2,3,4,5]. */
-	studyDays?: readonly number[];
+	/** Çocuğun kesintisiz dikkat süresi: bir görevin süresi (ADR-0013). */
+	blockMinutes: number;
+	/** Plana açık dersler. */
+	subjects: readonly Subject[];
+	idleTime: IdleTime;
+}
+
+export interface PlanInput {
+	settings: PlanSettings;
 	/** Bu haftanın konusu, derse göre sıralı iş listesi (okulla senkron). */
 	weeklyTopics: Partial<Record<Subject, readonly WorkItem[]>>;
 	/** Son denemenin zayıf konuları, öncelik sırasıyla. */
@@ -51,31 +64,61 @@ export interface PlanInput {
 
 export interface PlanTask {
 	id: string;
+	/** Görevin geldiği kütüphane işinin kimliği (ödevde yok). Devir ve taşımada kullanılır. */
+	itemId?: string;
 	day: number;
-	block: 1 | 2 | 3;
+	/** Gün içindeki sıra, 1'den başlar. */
+	block: number;
 	minutes: number;
 	subject: Subject;
 	topic: string;
 	resource: string;
 	work: string;
 	reason: Reason;
+	carriedOver?: boolean;
 }
 
 export interface DayPlan {
 	day: number;
 	tasks: PlanTask[];
 	totalMinutes: number;
+	/** Bütçeden artan dakika. */
+	idleMinutes: number;
+	/** Boş kalan süre için tercih edilen davranış (ADR-0013); yoksa boş bırakılır. */
+	idle?: "reading" | "review_needed";
 }
 
-export interface Unplaced {
+export type UnplacedReason = "no_capacity" | "not_study_day";
+
+export interface UnplacedHomework {
 	homework: Homework;
-	why: string;
+	why: UnplacedReason;
+}
+
+export type CutPool = "weekly_topic" | "weak_topic" | "spaced_review";
+
+export type CoverageWarning =
+	| { code: "subject_off"; subject: Subject }
+	| { code: "target_missed"; subject: Subject; days: number; target: number }
+	| { code: "items_cut"; count: number }
+	| { code: "homework_unplaced"; count: number }
+	| { code: "no_rest_day" }
+	| { code: "budget_below_block" };
+
+/** Kapsama raporu: plana sığmayanlar ve veliye gösterilecek uyarıların kaynağı (ADR-0013). */
+export interface Coverage {
+	/** Plana sığmayan işler, havuz bilgisiyle. */
+	cut: { item: WorkItem; pool: CutPool }[];
+	/** Ders başına görevli gün sayısı. */
+	subjectDays: Record<Subject, number>;
+	warnings: CoverageWarning[];
 }
 
 export interface WeeklyPlan {
 	weekStart: string;
-	dailyBudgetMinutes: number;
+	settings: PlanSettings;
 	days: DayPlan[];
 	/** Sığmayan okul ödevleri sessizce düşmez, görünür kalır. */
-	unplaced: Unplaced[];
+	unplaced: UnplacedHomework[];
+	coverage: Coverage;
 }

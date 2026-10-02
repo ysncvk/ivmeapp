@@ -1,183 +1,404 @@
 import { describe, expect, it } from "vitest";
-import { allocateBlocks, generateWeeklyPlan } from "./engine";
-import { checkDailyBudget, LIMITS } from "./limits";
-import type { PlanInput, Subject, WorkItem } from "./types";
+import { carryOver, generateWeeklyPlan, moveTask } from "./engine";
+import { checkBlockMinutes, checkDailyBudget } from "./limits";
+import type { PlanInput, PlanSettings, Subject, WorkItem } from "./types";
 
-const item = (
-	id: string,
+const items = (
 	subject: Subject,
-	topic: string,
+	prefix: string,
+	n: number,
 	extra: Partial<WorkItem> = {},
-): WorkItem => ({
-	id,
-	subject,
-	topic,
-	resource: "Kaynak",
-	work: `s.${id}`,
-	...extra,
+) =>
+	Array.from({ length: n }, (_, i) => ({
+		id: `${prefix}${i + 1}`,
+		subject,
+		topic: `${subject}-konu-${Math.floor(i / 3) + 1}`,
+		resource: `${subject} kitabı`,
+		work: `s.${i + 1} Test ${i + 1}`,
+		...extra,
+	})) satisfies WorkItem[];
+
+const SUBJECTS: Subject[] = [
+	"matematik",
+	"turkce",
+	"fen",
+	"sosyal",
+	"ingilizce",
+];
+
+const settings = (over: Partial<PlanSettings> = {}): PlanSettings => ({
+	weekStart: "2026-10-05",
+	studyDays: [1, 2, 3, 4, 5, 6],
+	dailyBudgetMinutes: 90,
+	blockMinutes: 30,
+	subjects: SUBJECTS,
+	idleTime: "free",
+	...over,
 });
 
 const base = (over: Partial<PlanInput> = {}): PlanInput => ({
-	weekStart: "2026-10-05",
-	dailyBudgetMinutes: 90,
-	weeklyTopics: {
-		matematik: [
-			item("m1", "matematik", "Kesirler"),
-			item("m2", "matematik", "Kesirler"),
-		],
-		turkce: [
-			item("t1", "turkce", "Paragraf"),
-			item("t2", "turkce", "Paragraf"),
-		],
-		fen: [item("f1", "fen", "Kuvvet")],
-		sosyal: [item("s1", "sosyal", "Harita")],
-		ingilizce: [item("i1", "ingilizce", "Unit 2")],
-	},
-	weakTopics: [
-		item("w1", "matematik", "Oran-orantı"),
-		item("w2", "turkce", "Cümle"),
-	],
-	reviewItems: [item("r1", "fen", "Madde"), item("r2", "sosyal", "Kültür")],
+	settings: settings(),
+	weeklyTopics: Object.fromEntries(
+		SUBJECTS.map((s) => [s, items(s, `w-${s}-`, 12)]),
+	),
+	weakTopics: items("matematik", "weak-", 8),
+	reviewItems: items("fen", "rev-", 8),
 	...over,
 });
+
+const allTasks = (p: ReturnType<typeof generateWeeklyPlan>) =>
+	p.days.flatMap((d) => d.tasks);
 
 describe("generateWeeklyPlan", () => {
 	it("aynı girdide aynı çıktıyı verir", () => {
 		expect(generateWeeklyPlan(base())).toEqual(generateWeeklyPlan(base()));
 	});
 
-	it("bütçeyi hiçbir koşulda aşmaz ve günde en fazla 3 görev üretir", () => {
-		for (let budget = 5; budget <= 240; budget += 5) {
-			const plan = generateWeeklyPlan(base({ dailyBudgetMinutes: budget }));
-			for (const d of plan.days) {
-				expect(d.totalMinutes).toBeLessThanOrEqual(budget);
-				expect(d.tasks.length).toBeLessThanOrEqual(LIMITS.maxTasksPerDay);
+	it("yuva sayısı bütçe ve blok süresinden türer (günde 3 madde sınırı yok)", () => {
+		const count = (budget: number, block: number) =>
+			generateWeeklyPlan(
+				base({
+					settings: settings({
+						dailyBudgetMinutes: budget,
+						blockMinutes: block,
+					}),
+				}),
+			).days[0]?.tasks.length;
+		expect(count(90, 30)).toBe(3);
+		expect(count(180, 30)).toBe(6);
+		expect(count(120, 20)).toBe(6);
+		expect(count(60, 25)).toBe(2);
+	});
+
+	it("bütçeyi hiçbir ayarda aşmaz", () => {
+		for (const budget of [15, 30, 45, 60, 90, 120, 180, 240]) {
+			for (const block of [10, 20, 25, 30, 45]) {
+				for (const studyDays of [
+					[1],
+					[1, 3, 5],
+					[1, 2, 3, 4, 5, 6],
+					[1, 2, 3, 4, 5, 6, 7],
+				]) {
+					const plan = generateWeeklyPlan(
+						base({
+							settings: settings({
+								dailyBudgetMinutes: budget,
+								blockMinutes: block,
+								studyDays,
+							}),
+						}),
+					);
+					for (const d of plan.days) {
+						expect(d.totalMinutes).toBeLessThanOrEqual(budget);
+						expect(d.idleMinutes).toBe(budget - d.totalMinutes);
+					}
+				}
 			}
 		}
 	});
 
-	it("90 dk bütçede günde 3 blok üretir, süreler ADR aralığında", () => {
-		const plan = generateWeeklyPlan(
-			base({
-				weakTopics: ["a", "b", "c"].map((id) => item(id, "matematik", "X")),
-				reviewItems: ["d", "e"].map((id) => item(id, "fen", "Y")),
-			}),
-		);
-		expect(plan.days).toHaveLength(5);
-		for (const d of plan.days) {
-			expect(d.tasks.map((t) => t.block)).toEqual([1, 2, 3]);
-			for (const t of d.tasks) {
-				expect(t.minutes).toBeGreaterThanOrEqual(20);
-				expect(t.minutes).toBeLessThanOrEqual(30);
-			}
-		}
-	});
-
-	it("her görev üretim gerekçesi taşır", () => {
-		const plan = generateWeeklyPlan(base());
-		for (const t of plan.days.flatMap((d) => d.tasks)) {
+	it("her görev somut iş, süre ve gerekçe taşır", () => {
+		for (const t of allTasks(generateWeeklyPlan(base()))) {
+			expect(t.work.length).toBeGreaterThan(0);
+			expect(t.resource.length).toBeGreaterThan(0);
+			expect(t.minutes).toBe(30);
 			expect(t.reason.detail.length).toBeGreaterThan(0);
 		}
 	});
 
-	it("matematik ve türkçe haftada en az 3 gün çalışılır", () => {
-		const tasks = generateWeeklyPlan(base()).days.flatMap((d) => d.tasks);
-		const daysOf = (s: Subject) =>
-			new Set(tasks.filter((t) => t.subject === s).map((t) => t.day)).size;
-		expect(daysOf("matematik")).toBeGreaterThanOrEqual(3);
-		expect(daysOf("turkce")).toBeGreaterThanOrEqual(3);
+	it("havuz oranı ~%50 konu / %30 zayıf / %20 tekrar", () => {
+		const tasks = allTasks(generateWeeklyPlan(base()));
+		const by = (s: string) => tasks.filter((t) => t.reason.source === s).length;
+		expect(tasks).toHaveLength(18);
+		expect(by("weekly_topic")).toBe(9);
+		expect(by("weak_topic")).toBe(5);
+		expect(by("spaced_review")).toBe(4);
 	});
 
-	it("küçük bütçede önce Blok 3 düşer, Blok 1 asla", () => {
-		expect(allocateBlocks(90).b3).toBeGreaterThan(0);
-		const small = allocateBlocks(50);
-		expect(small.b3).toBe(0);
-		expect(small.b1).toBeGreaterThan(0);
-		expect(small.b2).toBeGreaterThan(0);
-		const tiny = allocateBlocks(25);
-		expect(tiny.b1).toBeGreaterThan(0);
-		expect(tiny.b2).toBe(0);
-		expect(tiny.b3).toBe(0);
-	});
-
-	it("blok 3: %60 zayıf / %40 tekrar oranını uygular", () => {
-		const plan = generateWeeklyPlan(
-			base({
-				weakTopics: ["a", "b", "c"].map((id) => item(id, "matematik", "X")),
-				reviewItems: ["d", "e"].map((id) => item(id, "fen", "Y")),
-			}),
-		);
-		const b3 = plan.days.flatMap((d) => d.tasks).filter((t) => t.block === 3);
-		expect(b3.filter((t) => t.reason.source === "weak_topic")).toHaveLength(3);
-		expect(b3.filter((t) => t.reason.source === "spaced_review")).toHaveLength(
-			2,
+	it("matematik ve türkçe en az 3 gün çalışılır, hedef tutar", () => {
+		const plan = generateWeeklyPlan(base());
+		expect(plan.coverage.subjectDays.matematik).toBeGreaterThanOrEqual(3);
+		expect(plan.coverage.subjectDays.turkce).toBeGreaterThanOrEqual(3);
+		expect(plan.coverage.warnings.some((w) => w.code === "target_missed")).toBe(
+			false,
 		);
 	});
 
-	it("havuz boşsa Blok 3 görev eklemez, ekstra görev uydurmaz", () => {
-		const plan = generateWeeklyPlan(base({ weakTopics: [], reviewItems: [] }));
-		for (const d of plan.days)
-			expect(d.tasks.map((t) => t.block)).toEqual([1, 2]);
-	});
-
-	it("geçen haftadan kalan iş öne alınır ama görev sayısı artmaz", () => {
-		const carried = item("c1", "matematik", "Geçen hafta", {
-			carriedOver: true,
-		});
-		const withCarry = generateWeeklyPlan(
-			base({ weakTopics: [item("w1", "matematik", "Yeni"), carried] }),
-		);
-		const first = withCarry.days[0]?.tasks.find((t) => t.block === 3);
-		expect(first?.topic).toBe("Geçen hafta");
-		const without = generateWeeklyPlan(base());
-		const count = (p: typeof without) => p.days.flatMap((d) => d.tasks).length;
-		expect(count(withCarry)).toBe(count(without));
-	});
-
-	it("okul ödevi Blok 1'e girer ve bütçe küçülünce bile düşmez", () => {
-		const homework = [
-			{ day: 2, subject: "fen" as const, topic: "Kuvvet", work: "Ödev s.40" },
-		];
-		for (const budget of [25, 50, 90]) {
-			const plan = generateWeeklyPlan(
-				base({ dailyBudgetMinutes: budget, homework }),
-			);
-			const t = plan.days.find((d) => d.day === 2)?.tasks[0];
-			expect(t?.block).toBe(1);
-			expect(t?.reason.source).toBe("homework");
+	it("aynı ders aynı güne yığılmaz (yeterli çeşit varken)", () => {
+		const plan = generateWeeklyPlan(base());
+		for (const d of plan.days) {
+			const weekly = d.tasks.filter((t) => t.reason.source === "weekly_topic");
+			expect(new Set(weekly.map((t) => t.subject)).size).toBe(weekly.length);
 		}
 	});
 
-	it("sığmayan ödev sessizce düşmez, unplaced'a yazılır", () => {
-		const homework = [1, 2, 3].map((n) => ({
-			day: 1,
+	it("okul ödevi yerleşir, sığmayan sessizce düşmez", () => {
+		const hw = (n: number) => ({
+			day: 2,
+			subject: "fen" as const,
+			topic: `K${n}`,
+			work: `Ödev ${n}`,
+		});
+		const ok = generateWeeklyPlan(base({ homework: [hw(1)] }));
+		const day2 = ok.days.find((d) => d.day === 2);
+		expect(day2?.tasks[0]?.reason.source).toBe("homework");
+		expect(ok.unplaced).toHaveLength(0);
+
+		const over = generateWeeklyPlan(
+			base({ homework: [hw(1), hw(2), hw(3), hw(4)] }),
+		);
+		expect(
+			over.days
+				.find((d) => d.day === 2)
+				?.tasks.filter((t) => t.reason.source === "homework"),
+		).toHaveLength(3);
+		expect(over.unplaced).toHaveLength(1);
+		expect(over.unplaced[0]?.why).toBe("no_capacity");
+		expect(over.coverage.warnings).toContainEqual({
+			code: "homework_unplaced",
+			count: 1,
+		});
+	});
+
+	it("çalışma günü olmayan güne düşen ödev görünür kalır", () => {
+		const plan = generateWeeklyPlan(
+			base({
+				settings: settings({ studyDays: [1, 2, 3] }),
+				homework: [{ day: 5, subject: "fen", topic: "K", work: "Ödev" }],
+			}),
+		);
+		expect(plan.unplaced[0]?.why).toBe("not_study_day");
+	});
+
+	it("geçen haftadan kalan iş kısıtlı kapasitede öncelik alır", () => {
+		const carried = {
+			...items("matematik", "c-", 1)[0],
+			id: "carried-1",
+			carriedOver: true,
+		} as WorkItem;
+		const plan = generateWeeklyPlan(
+			base({
+				settings: settings({ studyDays: [1] }),
+				weakTopics: [...items("matematik", "weak-", 8), carried],
+			}),
+		);
+		const weak = allTasks(plan).filter((t) => t.reason.source === "weak_topic");
+		expect(weak[0]?.itemId).toBe("carried-1");
+		expect(weak[0]?.carriedOver).toBe(true);
+		expect(plan.coverage.cut.some((c) => c.item.id === "carried-1")).toBe(
+			false,
+		);
+	});
+
+	it("az gün seçilince kapsama raporunda kesilenler ve uyarı görünür", () => {
+		const plan = generateWeeklyPlan(
+			base({ settings: settings({ studyDays: [1, 3] }) }),
+		);
+		expect(plan.coverage.cut.length).toBeGreaterThan(0);
+		expect(plan.coverage.warnings.some((w) => w.code === "items_cut")).toBe(
+			true,
+		);
+		expect(plan.coverage.warnings.some((w) => w.code === "target_missed")).toBe(
+			true,
+		);
+	});
+
+	it("kapalı ders plana girmez; matematik/türkçe kapalıysa uyarı verir", () => {
+		const plan = generateWeeklyPlan(
+			base({
+				settings: settings({
+					subjects: ["fen", "sosyal", "ingilizce", "turkce"],
+				}),
+			}),
+		);
+		expect(allTasks(plan).some((t) => t.subject === "matematik")).toBe(false);
+		expect(plan.coverage.warnings).toContainEqual({
+			code: "subject_off",
+			subject: "matematik",
+		});
+	});
+
+	it("7 gün seçilirse boş gün kalmadığı uyarılır, engellenmez", () => {
+		const plan = generateWeeklyPlan(
+			base({ settings: settings({ studyDays: [1, 2, 3, 4, 5, 6, 7] }) }),
+		);
+		expect(plan.days).toHaveLength(7);
+		expect(plan.coverage.warnings).toContainEqual({ code: "no_rest_day" });
+	});
+
+	it("bütçe blok süresinden küçükse tek kısa görev, uyarıyla", () => {
+		const plan = generateWeeklyPlan(
+			base({
+				settings: settings({ dailyBudgetMinutes: 20, blockMinutes: 30 }),
+			}),
+		);
+		expect(plan.days[0]?.tasks).toHaveLength(1);
+		expect(plan.days[0]?.tasks[0]?.minutes).toBe(20);
+		expect(plan.coverage.warnings).toContainEqual({
+			code: "budget_below_block",
+		});
+	});
+
+	it("havuz tükenince boş kalan süre veli tercihine göre işaretlenir", () => {
+		const few = base({
+			weeklyTopics: { matematik: items("matematik", "m-", 2) },
+			weakTopics: [],
+			reviewItems: [],
+		});
+		const free = generateWeeklyPlan({
+			...few,
+			settings: settings({ idleTime: "free" }),
+		});
+		const reading = generateWeeklyPlan({
+			...few,
+			settings: settings({ idleTime: "reading" }),
+		});
+		const review = generateWeeklyPlan({
+			...few,
+			settings: settings({ idleTime: "review" }),
+		});
+		expect(free.days.every((d) => d.idle === undefined)).toBe(true);
+		expect(reading.days.some((d) => d.idle === "reading")).toBe(true);
+		expect(review.days.some((d) => d.idle === "review_needed")).toBe(true);
+		// Motor boşluğu görev uydurarak doldurmaz.
+		expect(allTasks(free)).toHaveLength(2);
+	});
+
+	it("geçersiz ayarı reddeder", () => {
+		expect(() =>
+			generateWeeklyPlan(base({ settings: settings({ studyDays: [] }) })),
+		).toThrow(RangeError);
+		expect(() =>
+			generateWeeklyPlan(base({ settings: settings({ studyDays: [1, 1] }) })),
+		).toThrow(RangeError);
+		expect(() =>
+			generateWeeklyPlan(base({ settings: settings({ studyDays: [8] }) })),
+		).toThrow(RangeError);
+		expect(() =>
+			generateWeeklyPlan(
+				base({ settings: settings({ dailyBudgetMinutes: 0 }) }),
+			),
+		).toThrow(RangeError);
+		expect(() =>
+			generateWeeklyPlan(base({ settings: settings({ blockMinutes: 0 }) })),
+		).toThrow(RangeError);
+	});
+});
+
+describe("carryOver", () => {
+	it("yapılmayan görevleri devreder, ödevi ve yapılanı devretmez", () => {
+		const plan = generateWeeklyPlan(
+			base({
+				homework: [{ day: 1, subject: "fen", topic: "K", work: "Ödev" }],
+			}),
+		);
+		const tasks = allTasks(plan);
+		const done = new Set(tasks.slice(0, 5).map((t) => t.id));
+		const carried = carryOver(plan, done);
+		expect(carried.length).toBe(
+			tasks.length -
+				5 -
+				tasks.slice(5).filter((t) => t.reason.source === "homework").length,
+		);
+		expect(carried.every((i) => i.carriedOver)).toBe(true);
+		expect(carried.some((i) => i.work === "Ödev")).toBe(false);
+	});
+});
+
+describe("moveTask", () => {
+	it("yer varsa taşır ve bütçeyi aşmaz", () => {
+		const plan = generateWeeklyPlan(
+			base({
+				settings: settings({ dailyBudgetMinutes: 90, studyDays: [1, 2] }),
+				weakTopics: [],
+				reviewItems: [],
+				weeklyTopics: { matematik: items("matematik", "m-", 4) },
+			}),
+		);
+		// 2 gün x 3 yuva, yalnızca 4 görev: gün 2'de yer var.
+		const from = plan.days[0];
+		const task = from?.tasks[0];
+		const roomDay = plan.days.find((d) => d.tasks.length < 3);
+		expect(task && roomDay).toBeTruthy();
+		if (!task || !roomDay || roomDay.day === from?.day) return;
+		const res = moveTask(plan, task.id, roomDay.day);
+		expect(res.ok).toBe(true);
+		if (res.ok) {
+			for (const d of res.plan.days)
+				expect(d.totalMinutes).toBeLessThanOrEqual(90);
+			expect(res.plan.days.flatMap((d) => d.tasks)).toHaveLength(
+				plan.days.flatMap((d) => d.tasks).length,
+			);
+		}
+	});
+
+	it("hedef gün doluysa zayıf konu/tekrar görevi havuza düşer", () => {
+		const plan = generateWeeklyPlan(base());
+		const task = plan.days[0]?.tasks.find(
+			(t) => t.reason.source === "weekly_topic",
+		);
+		const target = plan.days.find((d) => d.day === 2);
+		expect(
+			task && target?.tasks.some((t) => t.reason.source !== "weekly_topic"),
+		).toBeTruthy();
+		if (!task) return;
+		const res = moveTask(plan, task.id, 2);
+		expect(res.ok).toBe(true);
+		if (res.ok) {
+			expect(res.displaced).toBeDefined();
+			expect(res.displaced?.carriedOver).toBe(true);
+			const d2 = res.plan.days.find((d) => d.day === 2);
+			expect(d2?.tasks.length).toBe(3);
+			expect(d2?.totalMinutes).toBeLessThanOrEqual(90);
+			expect(
+				res.plan.coverage.cut.some((c) => c.item.id === res.displaced?.id),
+			).toBe(true);
+		}
+	});
+
+	it("okul ödevi yerinden edilmez; yalnızca ödevle dolu gün taşımayı reddeder", () => {
+		const hw = [1, 2, 3].map((n) => ({
+			day: 2,
 			subject: "fen" as const,
 			topic: `K${n}`,
 			work: `Ödev ${n}`,
 		}));
-		const plan = generateWeeklyPlan(base({ homework }));
-		expect(plan.unplaced).toHaveLength(1);
-		expect(plan.days[0]?.tasks.length).toBeLessThanOrEqual(3);
+		const plan = generateWeeklyPlan(base({ homework: hw }));
+		const task = plan.days[0]?.tasks[0];
+		if (!task) throw new Error("görev yok");
+		const res = moveTask(plan, task.id, 2);
+		expect(res).toEqual({ ok: false, reason: "no_capacity" });
 	});
 
-	it("haftada 5 günden fazla çalışma gününü reddeder", () => {
-		expect(() =>
-			generateWeeklyPlan(base({ studyDays: [1, 2, 3, 4, 5, 6] })),
-		).toThrow(RangeError);
-	});
-
-	it("daha az çalışma günüyle de plan kurar", () => {
-		const plan = generateWeeklyPlan(base({ studyDays: [1, 3, 5] }));
-		expect(plan.days.map((d) => d.day)).toEqual([1, 3, 5]);
+	it("bilinmeyen görevi, çalışma günü olmayan günü ve aynı günü reddeder", () => {
+		const plan = generateWeeklyPlan(
+			base({ settings: settings({ studyDays: [1, 2, 3] }) }),
+		);
+		const task = plan.days[0]?.tasks[0];
+		if (!task) throw new Error("görev yok");
+		expect(moveTask(plan, "yok", 2)).toEqual({
+			ok: false,
+			reason: "unknown_task",
+		});
+		expect(moveTask(plan, task.id, 6)).toEqual({
+			ok: false,
+			reason: "not_study_day",
+		});
+		expect(moveTask(plan, task.id, task.day)).toEqual({
+			ok: false,
+			reason: "same_day",
+		});
 	});
 });
 
-describe("checkDailyBudget", () => {
-	it("korkuluk seviyelerini döner", () => {
+describe("tavsiye kontrolleri", () => {
+	it("bütçe ve blok süresi için engel değil, uyarı seviyesi döner", () => {
 		expect(checkDailyBudget(90).level).toBe("ok");
-		expect(checkDailyBudget(120).level).toBe("ok");
 		expect(checkDailyBudget(121).level).toBe("warn");
 		expect(checkDailyBudget(181).level).toBe("strong_warn");
 		expect(checkDailyBudget(0).level).toBe("invalid");
+		expect(checkBlockMinutes(30).level).toBe("ok");
+		expect(checkBlockMinutes(5).level).toBe("warn");
+		expect(checkBlockMinutes(60).level).toBe("warn");
 	});
 });
