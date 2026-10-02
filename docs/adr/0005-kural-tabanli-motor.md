@@ -35,11 +35,11 @@ Günlük şablon (90 dakikalık bütçe için):
 | Blok | Süre | İçerik |
 |---|---|---|
 | 1 | 25-30 dk | Okul ödevi / bugün işlenen konu |
-| 2 | 25-30 dk | Matematik veya Türkçe (dönüşümlü, ikisi de haftada ≥3 gün) |
+| 2 | 25-30 dk | Matematik veya Türkçe (dönüşümlü; haftalık gün hedefi için bkz. Güncelleme) |
 | 3 | 20-25 dk | Zayıf konu **veya** aralıklı tekrar (2-4 hafta öncesi) |
 
-Fen, Sosyal ve İngilizce her gün değil; haftada 2-3 kez Blok 1 veya 2'de
-dönüşümlü. Matematik ve Türkçe beceri dersi olduğu için sık; diğerleri bilgi
+Fen, Sosyal ve İngilizce her gün değil; Blok 1 veya 2'de dönüşümlü (haftalık
+sayı için bkz. Güncelleme). Matematik ve Türkçe beceri dersi olduğu için sık; diğerleri bilgi
 dersi olduğu için aralıklı tekrara daha uygun.
 
 Ağırlık dağılımı:
@@ -69,3 +69,25 @@ Kesme kuralları:
   Cumartesi analizi, gelecek haftanın girdisi.
 - Yapay zekâ ileride yalnızca haftalık değerlendirme/yorum için eklenebilir;
   plan üretimi kural motorunda kalır.
+
+## Güncelleme (2026-10-02, ADR-0013)
+
+Bu ADR'nin ilk hali 5 çalışma günü ve sabit bir ders rotasyonu varsayıyordu. Bu
+varsayım, matematik ≥3 gün + Türkçe ≥3 gün + Fen/Sosyal/İngilizce'nin her biri
+2-3 kez kurallarını 10 yuvaya sığdırmaya çalıştığı için kendi içinde çelişiyordu
+(en az 12 yuva gerekiyor). Aşağıdaki kurallar yukarıdakilerin yerine geçer:
+
+- **Yuva sayısı sabit değildir, hesaplanır:** çalışma günü sayısı × günlük blok
+  sayısı. Gün sayısı ve bütçe veli ayarıdır (ADR-0013); haftada en fazla 6 gün.
+- **Günlük sınırlar değişmez:** günde en fazla 3 madde, bütçe aşılamaz. Yuva
+  eklemenin yolu gün eklemektir, günlük blok sayısını artırmak değildir.
+- **Ders dağılımı kota tabanlıdır, sabit rotasyon değildir.** Seçili derslerin
+  haftalık kotası müfredattaki konuma ve veli seçimine göre hesaplanır.
+- **Matematik ve Türkçe öncelikli, "≥3 gün" bir hedeftir, garanti değil.** Yuva
+  yetmezse hedef düşer ve neyin kesildiği *kapsama raporuna* yazılır; motor yine
+  görev eklemez, yalnızca önceliklendirip keser.
+- **Fen, Sosyal ve İngilizce için sabit "2-3 kez" kuralı kalktı.** Haftalık
+  sayıları kalan yuvalara ve müfredattaki konuma göre kota belirler; Blok 3'teki
+  zayıf konu ve aralıklı tekrar bu derslerin eksik kalan kısmını tamamlar.
+- Diğer kurallar (ağırlık dağılımı, kesme kuralları, birikmeme, haftalık sabitlik)
+  ADR-0013'teki istisnalarla birlikte geçerlidir.

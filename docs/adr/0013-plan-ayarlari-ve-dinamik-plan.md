@@ -32,8 +32,9 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
    çalışma günü, en az bir gün tam boş.*
 3. **Motor kota tabanlıdır.** Seçili derslerin haftalık yuva kotası (müfredattaki
    konum ve veli seçimine göre) hesaplanır, yuvalar günlere yayılır; aynı ders art
-   arda günlere yığılmaz. Matematik ve Türkçe açıksa haftada en az 3 gün.
-   Rotasyon tabloları kalkar.
+   arda günlere yığılmaz. Matematik ve Türkçe açıksa hedef haftada 3 gün; yuva yetmezse
+   hedef düşer ve kapsama raporuna yazılır (ADR-0005 güncellemesi). Rotasyon
+   tabloları kalkar.
 4. **Kapsama uyarısı.** Seçilen gün ve ders sayısıyla müfredata yetişilemiyorsa
    motor hangi konuların kapsam dışı kaldığını bir *kapsama raporu* olarak döner;
    veliye "bu ayarlarla şu konulara yetişilmeyebilir" uyarısı bundan üretilir.
