@@ -282,9 +282,15 @@ importers:
       '@ivmeapp/auth':
         specifier: workspace:*
         version: link:../auth
+      '@ivmeapp/core':
+        specifier: workspace:*
+        version: link:../core
       '@ivmeapp/db':
         specifier: workspace:*
         version: link:../db
+      '@ivmeapp/library':
+        specifier: workspace:*
+        version: link:../library
       '@orpc/client':
         specifier: 'catalog:'
         version: 1.15.4
@@ -297,6 +303,9 @@ importers:
       '@orpc/zod':
         specifier: 'catalog:'
         version: 1.15.4(@orpc/contract@1.15.4)(@orpc/server@1.15.4)(zod@4.6.5)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.4(@types/pg@8.23.1)(pg@8.23.1)(zod@4.6.5)
       zod:
         specifier: 'catalog:'
         version: 4.6.5
@@ -307,6 +316,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@26.6.4)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.15)
 
   packages/auth:
     dependencies:
@@ -335,6 +347,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@26.6.4)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(tsx@4.23.15)
 
   packages/config: {}
 

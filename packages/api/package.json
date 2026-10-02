@@ -7,7 +7,8 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "check-types": "tsc -b"
+    "check-types": "tsc -b",
+    "test": "vitest run"
   },
   "dependencies": {
     "@ivmeapp/auth": "workspace:*",
@@ -16,10 +17,14 @@
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@ivmeapp/core": "workspace:*",
+    "@ivmeapp/library": "workspace:*",
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@ivmeapp/config": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^3.2.4"
   }
 }

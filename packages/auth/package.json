@@ -7,7 +7,8 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "check-types": "tsc -b"
+    "check-types": "tsc -b",
+    "test": "vitest run"
   },
   "dependencies": {
     "@better-auth/core": "1.7.5",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@ivmeapp/config": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^3.2.4"
   }
 }

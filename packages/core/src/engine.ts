@@ -508,11 +508,11 @@ export function moveTask(
 				KIND_ORDER[a.reason.source] - KIND_ORDER[b.reason.source] ||
 				a.block - b.block,
 		);
+		// Görev kimliği kalıcıdır (veritabanı satırı); yalnızca gün ve sıra güncellenir.
 		const renumbered = sorted.map((t, i) => ({
 			...t,
 			day: day.day,
 			block: i + 1,
-			id: `${settings.weekStart}:d${day.day}:b${i + 1}`,
 		}));
 		return finishDay(settings, day.day, renumbered, slotsPerDay);
 	};
