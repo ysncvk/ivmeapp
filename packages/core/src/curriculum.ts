@@ -27,6 +27,8 @@ export interface CurriculumOutcome {
 	/** Kazanım kodu, örn. "FB.6.2.1.1". */
 	code: string;
 	title: string;
+	/** Bu haftada bu kazanıma ayrılan ders saati (programda belirtilmişse). */
+	hours?: number;
 }
 
 export interface CurriculumWeek {
