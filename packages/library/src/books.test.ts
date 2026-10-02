@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
 	books,
+	fenomen6FenA,
 	fenomen6MatematikA,
 	fenomen6ParagrafA,
 	fenomen6ParagrafB,
@@ -90,5 +91,25 @@ describe("kütüphane verisi", () => {
 			.filter((t) => t.kind === "yeni_nesil").length;
 		// Orijinal Yeni Nesil testleri: 3 + 1 + 7 + 1 + 2 + 2 + 3
 		expect(kinds).toBe(19);
+	});
+
+	it("Fenomen 6 Fen Bilimleri A içindekiler ile uyumlu", () => {
+		const items = bookWorkItems(fenomen6FenA);
+		// Ünite başına test sayıları: 11 + 11 + 26 + 16 + 16 + 10 + 13
+		expect(items).toHaveLength(103);
+		const work = (id: string) => items.find((i) => i.id === id)?.work;
+		expect(work("fenomen-6-fen-a:unite-1:t1")).toBe("1. Ünite · s.5 Test 1");
+		expect(work("fenomen-6-fen-a:unite-3:t26")).toBe(
+			"3. Ünite · s.133 Test 26",
+		);
+		expect(work("fenomen-6-fen-a:unite-7:t13")).toBe(
+			"7. Ünite · s.285 Test 13",
+		);
+		expect(fenomen6FenA.answerKeyPage).toBe(287);
+		const baglam = fenomen6FenA.sections
+			.flatMap((s) => s.units.flatMap((u) => u.tests))
+			.filter((t) => t.kind === "baglam");
+		// Her ünitenin son testi bağlam temelli
+		expect(baglam).toHaveLength(7);
 	});
 });

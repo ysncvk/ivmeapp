@@ -4,8 +4,8 @@
  */
 import type { Subject, WorkItem } from "./types";
 
-/** Test türü: izleme, kalıplaşmış ikiz soru, orijinal yeni nesil soru. */
-export type TestKind = "izleme" | "ikiz" | "yeni_nesil";
+/** Test türü: kavram, izleme, kalıplaşmış ikiz, orijinal yeni nesil, bağlam temelli. */
+export type TestKind = "kavram" | "izleme" | "ikiz" | "yeni_nesil" | "baglam";
 
 export interface BookTest {
 	no: number;
