@@ -18,14 +18,15 @@ Kurallar:
 | [0003](0003-veri-saglayici-soyutlamasi.md) | Deneme verisi sağlayıcı arayüzü arkasından gelir | Kabul |
 | [0004](0004-kaynak-kutuphanesi.md) | Kaynak kütüphanesini biz kurarız, kullanıcı yalnızca seçer | Kabul |
 | [0005](0005-kural-tabanli-motor.md) | Plan kural tabanlı motorla üretilir, elle yazılmaz | Kabul (kısmen değiştirildi: 0013) |
-| [0006](0006-ucretsiz-ucretli-sinir.md) | Ücretsiz "ne oldu", ücretli "ne yapmalı" | Kabul |
-| [0007](0007-odeyen-taraf-veli.md) | Ödeyen taraf veli; öğretmen ücretsiz dağıtım kanalı | Kabul |
+| [0006](0006-ucretsiz-ucretli-sinir.md) | Ücretsiz "ne oldu", ücretli "ne yapmalı" | Kabul (kısmen değiştirildi: 0014) |
+| [0007](0007-odeyen-taraf-veli.md) | Ödeyen taraf veli; öğretmen ücretsiz dağıtım kanalı | Kabul (kısmen değiştirildi: 0014) |
 | [0008](0008-rol-platform-dagilimi.md) | Öğrenci/veli mobil öncelikli, öğretmen/admin web öncelikli | Kabul |
 | [0009](0009-calisma-yuku-sinirlari.md) | Günlük yük üst sınırı motorun aşamayacağı bir kısıttır | Kabul (kısmen değiştirildi: 0013) |
 | [0010](0010-cocuk-verisi-ve-erisim.md) | Çocuk verisi ve erişim kontrolü ilkeleri | Kabul |
 | [0011](0011-teknoloji-yigini.md) | Teknoloji yığını ve repo yapısı | Kabul |
 | [0012](0012-kimlik-ve-oturum-modeli.md) | Kimlik ve oturum modeli | Kabul |
 | [0013](0013-plan-ayarlari-ve-dinamik-plan.md) | Plan ayarları ve dinamik plan kuralları (0005/0009'u kısmen değiştirir) | Kabul |
+| [0014](0014-katman-siniri-ve-odev-akisi.md) | Katman sınırı, ödev akışı ve öğretmen görünürlüğü (0006/0007'yi kısmen değiştirir) | Kabul |
 
 ## Açık kalanlar
 

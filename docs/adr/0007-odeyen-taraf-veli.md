@@ -1,6 +1,6 @@
 # ADR-0007: Ödeyen taraf veli; öğretmen ücretsiz dağıtım kanalı
 
-- **Durum:** Kabul
+- **Durum:** Kabul (kısmen değiştirildi: ADR-0014)
 - **Tarih:** 2026-09-27
 
 ## Bağlam

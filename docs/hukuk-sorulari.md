@@ -67,6 +67,29 @@ kalan nokta ayrı ayrı yazılsın. Kesin olmayan yerde bunun belirtilmesi isten
 10. **Pazarlama.** Veliye WhatsApp/e-posta ile haftalık özet göndermek için ayrı
     bir ticari elektronik ileti izni gerekir mi, yoksa hizmet bildirimi sayılır mı?
 
+11. **Öğretmenin ücretsiz araç olarak konumu.** Öğretmen sınıfa ödev atayıp
+    velilere davet linki gönderiyor; uygulamanın bir ücretli katmanı var ama
+    öğretmen ve ödev takibi ücretsiz, öğretmen ücretli planı satmıyor ve ücretli
+    kullanıcıları göremiyor. Bu kurgu okul/MEB mevzuatı ve ticari yönlendirme
+    açısından yeterli mi? Öğretmenin veli gruplarına atacağı davet metninde
+    "ödev ve görev takibi ücretsizdir" vurgusu uygun mu?
+12. **Mesafeli satış ve ön bilgilendirme.** Yalnızca ücretli plan satın alınırken
+    devreye giren sözleşme ve ön bilgilendirme metinleri hangi unsurları taşımalı?
+    Kartsız bir haftalık deneme ve sonrasında veli kendi başlatırsa abonelik
+    kurgusu için ek yükümlülük var mı?
+13. **Ücretsiz ve ücretli katmanda işlenen verinin kategorileri.** Ücretsizde
+    ödev takibi ve deneme verisi, ücretlide ek olarak seçilen kaynaklar ve
+    ayrıntılı ders analizi işleniyor. Aydınlatma metninde bu iki katman ayrı
+    kategorize edilmeli mi?
+14. **Pazarlama bildirimi için ayrı onay.** Üyelikten ayrı, isteğe bağlı bir onay
+    kutusuyla alınan e-posta/SMS onayı (çocuğa yönelik çalışma planı önerileri ve
+    kampanyalar) yeterli mi? Haftalık özet bildirimi bu onaydan bağımsız bir hizmet
+    bildirimi sayılır mı (bkz. 10)?
+
+> Not: Bu soruların bir kısmı başka bir yapay zekâ ile yapılan ön
+> değerlendirmeden geldi; o değerlendirmedeki "risk neredeyse sıfır" gibi
+> ifadeler kesin hüküm değildir ve avukat teyidi gerektirir.
+
 ## Beklenen çıktı
 
 - Soru başına: ilgili mevzuat, kısa sonuç, belirsizlik.
