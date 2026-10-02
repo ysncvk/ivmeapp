@@ -38,3 +38,10 @@ Erişim hiçbir rol için cihaza göre kısıtlanmaz; **tasarım önceliği** fa
   webin küçültülmüş hali değil, ayrı ve dar kapsamlı bir görünümdür.
 - Öğretmenin mobilde yapabileceklerinin tam listesi henüz netleşmedi; ekran
   tasarımı sırasında karara bağlanacak.
+
+## Not (2026-10-02)
+
+Karar değişmedi, açıklık getirildi: "mobil öncelikli" öğrenci ve veli ekranlarının
+masaüstünde eksik çalışacağı anlamına gelmez. Dört rolün tamamı her cihazda tam
+çalışır; fark yalnızca tasarım önceliğidir. Bu, ADR-0011'de "tüm roller
+responsive" şartı olarak yazıldı.
