@@ -18,8 +18,9 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
 ## Karar
 
 1. **Plan ayarlarını veli belirler:**
-   - **Çalışma günleri.** Önerilen: haftada **6 gün** (Pazartesi-Cumartesi,
-     Pazar boş). Veli azaltabilir.
+   - **Çalışma günleri ve boş gün.** Önerilen: haftada **6 gün**
+     (Pazartesi-Cumartesi), en az bir tam boş gün (Pazar). Veli azaltabilir ya da
+     artırabilir; hiç boş gün bırakmazsa uyarı çıkar, engel yoktur.
    - **Günlük bütçe.** Varsayılan 90 dk (ADR-0009 değişmedi).
    - **Blok süresi.** Çocuğa özeldir. Çocuk profili eklenirken veliye sorulur:
      "Kesintisiz kaç dakika dikkatli çalışabiliyor?" Uygulama 25-30 dk tavsiye
@@ -35,9 +36,12 @@ ADR-0009 hafta içi 5 gün dedi. Uygulamada iki sorun çıktı:
    türer (örn. 90 dk ≈ 3 blok, 180 dk ≈ 6 blok). Bütçe için ADR-0009'daki uyarı
    seviyeleri (2 saat üstü uyarı, çok yüksekte daha açık uyarı) **tavsiyedir,
    engel değildir**. Motor yine velinin verdiği bütçeyi aşmaz ve görev eklemez.
-   Değişmeyen kısıtlar: okul ödevi düşmez (bütçeye sığmazsa gizlenmez, velinin
-   önüne uyarıyla çıkar), **haftada en az bir gün tamamen boş**. ADR-0009 madde 4'ün "hafta içi 5 gün" kuralı yerine:
-   *haftada en fazla 6 çalışma günü, en az bir gün tam boş.*
+   **Okul ödevi düşmez** (sabit kural, ayar değildir): bütçe daralınca önce zayıf
+   konu/tekrar düşer; ödev bütçeye sığmazsa gizlenmez, velinin önüne uyarıyla
+   çıkar. ADR-0009 madde 4'ün "hafta içi 5 gün, en az bir tam boş gün" kuralı
+   yerine: *tavsiye haftada 6 gün ve en az bir tam boş gün; veli değiştirebilir.*
+   Sabit kalan tek şey: okul ödevi düşmez, motor velinin verdiği bütçeyi aşmaz ve
+   görev uydurmaz.
 3. **Motor kota tabanlıdır.** Seçili derslerin haftalık yuva kotası (müfredattaki
    konum ve veli seçimine göre) hesaplanır, yuvalar günlere yayılır; aynı ders art
    arda günlere yığılmaz. Matematik ve Türkçe açıksa hedef haftada 3 gün; yuva yetmezse
