@@ -30,3 +30,9 @@ doğrulama `docs/hukuk-sorulari.md` üzerinden yapılır.
 - Öğrenci/veli ekranlarında çevrimdışı kullanım (PWA önbelleği yalnızca kabuk).
 - Erişilebilirlik ve gerçek cihaz testi (iOS Safari PWA) yapılmadı.
 - Web için otomatik uçtan uca test yok; akış elle Playwright ile doğrulandı.
+
+## Fikir havuzu (v2+, kapsam dışı)
+- **Test mağazası:** yayınevlerinden parça parça test satın alma, uygulamada online çözme, komisyon
+  geliri. Gerektirir: soru içeriği ve çözme ekranı, sunucu tarafında cevap anahtarı, ödeme
+  sağlayıcısı, yayınevi sözleşmesi, hukuk incelemesi (lisans, vergi, 12 yaş altına satış).
+  İlke: ödev takibi ücretsiz kalır (ADR-0014); plana giren kitap seçimi komisyondan etkilenmez.
