@@ -22,6 +22,9 @@
 		"dev:worker": "turbo run dev -F worker --",
 		"db:reset": "./scripts/db-reset.sh",
 		"db:seed": "cd apps/server && pnpm db:seed",
+		"sub:activate": "cd apps/server && pnpm sub:activate",
+		"prod:build": "turbo run build",
+		"prod:start": "./scripts/start-prod.sh",
 		"test": "turbo test"
 	},
 	"dependencies": {

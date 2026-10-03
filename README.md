@@ -45,6 +45,10 @@ pnpm test
 
 CI (`.github/workflows/ci.yml`) aynı üç kapıyı Postgres servis konteyneriyle çalıştırır.
 
+## Evde/sunucuda kurulum
+
+macOS + Cloudflare Tunnel için adım adım: `docs/kurulum-ev.md`.
+
 ## Ortam değişkenleri
 
 `apps/server`: `DATABASE_URL`, `BETTER_AUTH_SECRET` (en az 32 karakter), `BETTER_AUTH_URL`,

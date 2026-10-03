@@ -83,6 +83,8 @@ export function createAuth(
 		secret: env.BETTER_AUTH_SECRET,
 		baseURL: env.BETTER_AUTH_URL,
 		advanced: {
+			// Cloudflare tüneli arkasında gerçek istemci adresi bu başlıkta gelir; oran sınırı buna göre işler
+			ipAddress: { ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"] },
 			defaultCookieAttributes: {
 				sameSite: "none",
 				secure: true,

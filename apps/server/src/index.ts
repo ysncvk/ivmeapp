@@ -1,10 +1,13 @@
+import { relative, resolve } from "node:path";
+import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { appRouter } from "@ivmeapp/api/routers/index";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
@@ -48,7 +51,7 @@ export const rpcHandler = new RPCHandler(appRouter, {
 	],
 });
 
-app.use("/*", async (c, next) => {
+const handleApi: MiddlewareHandler = async (c, next) => {
 	const context = await createContext({ context: c });
 
 	const rpcResult = await rpcHandler.handle(c.req.raw, {
@@ -70,18 +73,24 @@ app.use("/*", async (c, next) => {
 	}
 
 	await next();
-});
+};
+app.use("/rpc/*", handleApi);
+app.use("/api-reference/*", handleApi);
 
-app.get("/", (c) => {
-	return c.text("OK");
-});
-
-import { serve } from "@hono/node-server";
+// Evde/tek sunucuda tek adres: WEB_DIST verilirse derlenmiş web arayüzü de buradan sunulur
+// (SPA: bilinmeyen yollar index.html'e düşer). Verilmezse yalnızca API çalışır.
+if (ENV.WEB_DIST) {
+	const root = relative(process.cwd(), resolve(ENV.WEB_DIST));
+	app.use("/*", serveStatic({ root }));
+	app.get("*", serveStatic({ root, path: "index.html" }));
+} else {
+	app.get("/", (c) => c.text("OK"));
+}
 
 serve(
 	{
 		fetch: app.fetch,
-		port: 3000,
+		port: ENV.PORT ?? 3000,
 	},
 	(info) => {
 		console.log(`Server is running on http://localhost:${info.port}`);
