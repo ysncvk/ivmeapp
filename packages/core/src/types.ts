@@ -53,8 +53,8 @@ export interface PlanSettings {
 	/**
 	 * Ders başına günlük test sayısı (soru hedefinin test karşılığı). Verilirse her çalışma günü her
 	 * derse tam bu kadar yuva ayrılır; haftanın konusu / zayıf konu / tekrar bu yuvaların içinde
-	 * ağırlıkla (%50/%30/%20) paylaşılır. Okul ödevi yuvadan düşmez, yuvasını aynı dersten ya da en
-	 * kalabalık dersten alır.
+	 * ağırlıkla (%50/%30/%20) paylaşılır. Okul ödevi bu yuvalara ek olarak girer ve hiçbir testi
+	 * düşürmez: günlük hedef, ödevden bağımsız olarak tutar.
 	 */
 	dailyTests?: Partial<Record<Subject, number>>;
 	idleTime: IdleTime;

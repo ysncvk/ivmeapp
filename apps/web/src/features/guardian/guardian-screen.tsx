@@ -42,12 +42,16 @@ export function GuardianScreen({
 	actions = {},
 	activeId: controlledId,
 	onSelect,
+	reports,
 }: {
 	childProfiles: ChildData[];
 	actions?: GuardianActions;
 	activeId?: string;
 	onSelect?: (id: string) => void;
+	/** Raporlar görünümü; verilmezse (tasarım önizlemesi) sekme çubuğu çıkmaz. */
+	reports?: (child: ChildData) => React.ReactNode;
 }) {
+	const [view, setView] = useState<"ozet" | "rapor">("ozet");
 	const [localId, setLocalId] = useState(childProfiles[0]?.id);
 	const activeId = controlledId ?? localId;
 	const setActiveId = (id: string) => {
@@ -66,34 +70,68 @@ export function GuardianScreen({
 				actions={actions}
 			/>
 			<main className="mx-auto w-full max-w-md px-4 pt-4 pb-20 sm:max-w-xl md:max-w-4xl md:pt-6 lg:max-w-5xl">
-				{child && <RewardBanner child={child} actions={actions} />}
+				{child && reports && (
+					<nav
+						aria-label="Görünüm"
+						className="mb-4 flex gap-2 rounded-full bg-muted p-1"
+					>
+						{(
+							[
+								["ozet", "Özet"],
+								["rapor", "Raporlar"],
+							] as const
+						).map(([key, label]) => (
+							<button
+								key={key}
+								type="button"
+								aria-pressed={view === key}
+								onClick={() => setView(key)}
+								className={cn(
+									"min-h-10 flex-1 rounded-full px-4 font-bold text-sm outline-none transition-colors focus-visible:ring-4 focus-visible:ring-ring/40",
+									view === key
+										? "bg-primary text-primary-foreground shadow-sm"
+										: "text-muted-foreground hover:text-foreground",
+								)}
+							>
+								{label}
+							</button>
+						))}
+					</nav>
+				)}
 				{child ? (
-					<div className="mt-4 grid gap-4 md:grid-cols-2 md:items-start md:gap-5">
-						<div className="flex flex-col gap-4 md:gap-5">
-							<QuestionsCard
-								key={`q-${child.id}`}
-								childId={child.id}
-								data={child.questions}
-								week={child.week}
-								actions={actions}
-							/>
-							{!hasGoals(child) && (
-								<WeekCard key={`w-${child.id}`} child={child} />
-							)}
-							<RewardsCard
-								key={`r-${child.id}`}
-								childId={child.id}
-								rewards={child.rewards}
-								history={child.rewardHistory}
-								actions={actions}
-							/>
-						</div>
-						<div className="flex flex-col gap-4 md:gap-5">
-							<DiagnosisCard child={child} actions={actions} />
-							<PaywallCard child={child} actions={actions} />
-							<HomeworkCard child={child} actions={actions} />
-						</div>
-					</div>
+					<>
+						<RewardBanner child={child} actions={actions} />
+						{reports && view === "rapor" ? (
+							reports(child)
+						) : (
+							<div className="mt-4 grid gap-4 md:grid-cols-2 md:items-start md:gap-5">
+								<div className="flex flex-col gap-4 md:gap-5">
+									<QuestionsCard
+										key={`q-${child.id}`}
+										childId={child.id}
+										data={child.questions}
+										week={child.week}
+										actions={actions}
+									/>
+									{!hasGoals(child) && (
+										<WeekCard key={`w-${child.id}`} child={child} />
+									)}
+									<RewardsCard
+										key={`r-${child.id}`}
+										childId={child.id}
+										rewards={child.rewards}
+										history={child.rewardHistory}
+										actions={actions}
+									/>
+								</div>
+								<div className="flex flex-col gap-4 md:gap-5">
+									<DiagnosisCard child={child} actions={actions} />
+									<PaywallCard child={child} actions={actions} />
+									<HomeworkCard child={child} actions={actions} />
+								</div>
+							</div>
+						)}
+					</>
 				) : (
 					<EmptyChildren onAdd={actions.onAddChild} />
 				)}

@@ -173,7 +173,7 @@ export function generateWeeklyPlan(input: PlanInput): WeeklyPlan {
 	for (const hw of hwSorted) {
 		if (!days.includes(hw.day)) {
 			unplaced.push({ homework: hw, why: "not_study_day" });
-		} else if (room(hw.day) <= 0) {
+		} else if (!settings.dailyTests && room(hw.day) <= 0) {
 			unplaced.push({ homework: hw, why: "no_capacity" });
 		} else {
 			add(hw.day, {
@@ -217,22 +217,6 @@ export function generateWeeklyPlan(input: PlanInput): WeeklyPlan {
 			for (const s of SUBJECT_ORDER) {
 				const n = enabled.has(s) ? Math.max(0, Math.floor(tests[s] ?? 0)) : 0;
 				if (n > 0) m.set(s, n);
-			}
-			// Ödev Blok 1'i alır: yuva önce aynı dersten, yoksa en çok yuvası olan dersten düşer
-			for (const p of pending.get(d) ?? []) {
-				if (p.kind !== "homework") continue;
-				let victim: Subject | undefined =
-					(m.get(p.subject) ?? 0) > 0 ? p.subject : undefined;
-				if (!victim) {
-					let best = 0;
-					for (const [s, n] of m) {
-						if (n > best) {
-							best = n;
-							victim = s;
-						}
-					}
-				}
-				if (victim) m.set(victim, (m.get(victim) ?? 1) - 1);
 			}
 			slots.set(d, m);
 		}

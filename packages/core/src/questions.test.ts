@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_QUESTIONS_PER_TEST, testsPerDay } from "./questions";
 
 describe("testsPerDay", () => {
-	it("hedefe en yakın test sayısını verir", () => {
-		expect(testsPerDay(50, 12)).toBe(4);
+	it("hedefi karşılayan test sayısını verir (yukarı yuvarlar)", () => {
+		expect(testsPerDay(50, 12)).toBe(5);
 		expect(testsPerDay(30, 12)).toBe(3);
-		expect(testsPerDay(100, 12)).toBe(8);
+		expect(testsPerDay(36, 12)).toBe(3);
+		expect(testsPerDay(100, 12)).toBe(9);
 	});
 
 	it("küçük hedefte bile en az 1 test", () => {

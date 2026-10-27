@@ -175,20 +175,24 @@ function selectedBooks(
 }
 
 /**
- * Ödevin hafta içindeki günü (karar günlüğü K-015): teslim tarihinden önceki son çalışma günü;
- * teslim bu haftadan önceyse ilk çalışma günü; tarihsizse ilk çalışma günü; teslim sonraki
- * haftadaysa bu hafta planlanmaz.
+ * Ödevin hafta içindeki günü (karar günlüğü K-015, ADR-0013 madde 7): geçmişe ödev konmaz. Bu haftaysa
+ * bugünden önceki günler elenir; teslimden önceki son uygun çalışma günü, teslim geçmişse ya da yoksa
+ * ilk uygun gün. Teslim sonraki haftadaysa ya da bu hafta uygun gün kalmadıysa planlanmaz (ödev
+ * listede görünür).
  */
 export function homeworkDay(
 	weekStart: string,
 	studyDays: readonly number[],
 	dueDate: string | null,
+	today: string = weekStart,
 ): number | null {
-	const days = [...studyDays].sort((a, b) => a - b);
+	const weekEnd = addDays(weekStart, 6);
+	const minDay = today >= weekStart && today <= weekEnd ? isoWeekday(today) : 1;
+	const days = [...studyDays].sort((a, b) => a - b).filter((d) => d >= minDay);
 	const first = days[0];
 	if (first === undefined) return null;
 	if (!dueDate || dueDate < weekStart) return first;
-	if (dueDate > addDays(weekStart, 6)) return null;
+	if (dueDate > weekEnd) return null;
 	const dueWeekday = isoWeekday(dueDate);
 	const onOrBefore = days.filter((d) => d <= dueWeekday);
 	return onOrBefore.at(-1) ?? first;
@@ -389,7 +393,7 @@ export async function buildInput(
 	const studyDays = c.studyDays;
 	const engineHomework: EngineHomework[] = [];
 	for (const h of hwRows) {
-		const day = homeworkDay(weekStart, studyDays, h.dueDate);
+		const day = homeworkDay(weekStart, studyDays, h.dueDate, istanbulDate(now));
 		if (day === null) continue;
 		engineHomework.push({
 			id: h.id,

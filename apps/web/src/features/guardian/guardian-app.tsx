@@ -17,6 +17,7 @@ import {
 } from "./dialogs";
 import { type GuardianActions, GuardianScreen } from "./guardian-screen";
 import type { ChildData, DayStat, HomeworkItem, RewardTier } from "./mock";
+import { ReportsView } from "./reports";
 
 const DAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 const dueFmt = new Intl.DateTimeFormat("tr-TR", {
@@ -172,6 +173,7 @@ export function GuardianApp() {
 				actions={actions}
 				activeId={id}
 				onSelect={setActiveId}
+				reports={(c) => <ReportsView key={c.id} childId={c.id} />}
 			/>
 			{dialog?.kind === "consent" && (
 				<ConsentDialog

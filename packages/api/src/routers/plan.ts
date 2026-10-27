@@ -100,9 +100,11 @@ export const planRouter = {
 				const stored = await ensurePlan(context.db, child, weekStart, now);
 				const weekday = isoWeekday(today);
 				tasks = stored.tasks.filter((t) => t.day === weekday).map(taskView);
+				// Plana bağlı ödev yalnızca bugün ve sonraki günlerde plandan görünür; geçmiş güne düşüp
+				// yapılmamış ödev açık ödev listesinde kalır (kaybolmaz)
 				linkedHomework = new Set(
 					stored.tasks
-						.filter((t) => t.itemId?.startsWith("hw:"))
+						.filter((t) => t.itemId?.startsWith("hw:") && t.day >= weekday)
 						.map((t) => (t.itemId as string).slice(3)),
 				);
 			}

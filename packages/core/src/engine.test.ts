@@ -105,17 +105,24 @@ describe("soru hedefi modu (dailyTests)", () => {
 		expect(by("weekly_topic")).toBe(12);
 	});
 
-	it("okul ödevi yuvadan düşmez, yuvasını aynı dersten alır", () => {
+	it("okul ödevi yuvalara ek olarak girer; günlük test sayıları değişmez", () => {
 		const plan = goal({
 			homework: [
 				{ id: "h1", day: 2, subject: "fen", topic: "Ödev", work: "s.5" },
+				{ id: "h2", day: 2, subject: "sosyal", topic: "Ödev 2", work: "s.9" },
 			],
 		});
 		const day2 = plan.days.find((d) => d.day === 2);
-		expect(day2?.tasks.some((t) => t.reason.source === "homework")).toBe(true);
-		expect(day2?.tasks).toHaveLength(7);
-		expect(perDay(plan, "fen")[1]).toBe(3); // 2 test + 1 ödev
+		expect(
+			day2?.tasks.filter((t) => t.reason.source === "homework"),
+		).toHaveLength(2);
+		// 4 + 3 test + 2 ödev
+		expect(day2?.tasks).toHaveLength(9);
+		expect(perDay(plan, "fen")[1]).toBe(4); // 3 test + 1 ödev
 		expect(perDay(plan, "matematik")[1]).toBe(4);
+		expect(plan.unplaced).toEqual([]);
+		// Diğer günler etkilenmez
+		expect(perDay(plan, "matematik")).toEqual([4, 4, 4, 4, 4, 4]);
 	});
 
 	it("hedefsiz ders planda yer almaz; aynı girdide aynı plan çıkar", () => {

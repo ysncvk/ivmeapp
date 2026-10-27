@@ -443,8 +443,8 @@ describe("soru hedefi (basit mod)", () => {
 			["matematik", 50, 0],
 			["fen", 30, 0],
 		]);
-		// Fenomen kitapları test başına 12 soru: 50 → 4 test, 30 → 3 test
-		expect(o.subjects.map((x) => x.tests)).toEqual([4, 3]);
+		// Fenomen kitapları test başına 12 soru: 50 → 5 test, 30 → 3 test
+		expect(o.subjects.map((x) => x.tests)).toEqual([5, 3]);
 		// 6 çalışma günü × (50 + 30)
 		expect(o.week).toEqual({ goal: 480, solved: 0 });
 
@@ -600,13 +600,13 @@ describe("soru hedefi ve koçluk birleşimi", () => {
 		expect(new Set(tasks.map((x) => x.subject))).toEqual(
 			new Set(["matematik", "fen"]),
 		);
-		// Günde 4 + 3 = 7 test, 6 gün
-		expect(days.every((d) => d.tasks.length === 7)).toBe(true);
-		expect(tasks.filter((x) => x.subject === "matematik")).toHaveLength(24);
+		// Günde 5 + 3 = 8 test, 6 gün
+		expect(days.every((d) => d.tasks.length === 8)).toBe(true);
+		expect(tasks.filter((x) => x.subject === "matematik")).toHaveLength(30);
 		expect(tasks.filter((x) => x.subject === "fen")).toHaveLength(18);
-		// Her gün tam 4 matematik ve 3 fen testi: günlük hedef her gün tutar
+		// Her gün tam 5 matematik ve 3 fen testi: günlük hedef her gün tutar
 		for (const d of days) {
-			expect(d.tasks.filter((x) => x.subject === "matematik")).toHaveLength(4);
+			expect(d.tasks.filter((x) => x.subject === "matematik")).toHaveLength(5);
 			expect(d.tasks.filter((x) => x.subject === "fen")).toHaveLength(3);
 		}
 		// Bilinçli olarak kapalı dersler için "ders kapalı" uyarısı gösterilmez
@@ -624,7 +624,7 @@ describe("soru hedefi ve koçluk birleşimi", () => {
 		);
 		const today = await call(appRouter.plan.today, {}, { context: s });
 		const tests = today.tasks.filter((x) => x.subject === "matematik");
-		expect(tests.length).toBe(4);
+		expect(tests.length).toBe(5);
 		const first = tests[0];
 		const second = tests[1];
 		if (!first || !second) throw new Error("test görevi yok");
@@ -739,6 +739,121 @@ describe("soru hedefi ve koçluk birleşimi", () => {
 				{ context: other.g },
 			),
 		).rejects.toMatchObject({ code: "NOT_FOUND" });
+	});
+});
+
+describe("veli raporları ve konu haritası", () => {
+	async function reportFamily() {
+		const f = await family();
+		const [u] = await t.db
+			.select()
+			.from(user)
+			.where(eq(user.username, f.child.username ?? ""));
+		return { ...f, s: await ctxFor(u?.id ?? null) };
+	}
+
+	it("haftalık özet soru kaydı, hedef oranı ve paylaşılabilir metin üretir", async () => {
+		const { g, child, s } = await reportFamily();
+		await call(
+			appRouter.questions.setGoals,
+			{
+				childId: child.id,
+				goals: [
+					{ subject: "matematik", questions: 50 },
+					{ subject: "fen", questions: 30 },
+				],
+			},
+			{ context: g },
+		);
+		await call(
+			appRouter.questions.log,
+			{ subject: "matematik", solved: 40 },
+			{ context: s },
+		);
+		await call(
+			appRouter.questions.log,
+			{ subject: "fen", solved: 10 },
+			{ context: s },
+		);
+		const r = await call(
+			appRouter.report.week,
+			{ childId: child.id },
+			{ context: g },
+		);
+		// NOW = Pazartesi: bugüne kadar 1 çalışma günü, hedef 80, çözülen 50
+		expect(r.weekStart).toBe("2026-10-05");
+		expect(r.solved).toBe(50);
+		expect(r.goalSoFar).toBe(80);
+		expect(r.ratio).toBeCloseTo(0.625);
+		expect(r.level).toBe("good");
+		expect(r.weakest).toBe("fen");
+		expect(r.strongest).toBe("matematik");
+		expect(r.headline).toContain("Deniz bu hafta 1 gün çalıştı");
+		expect(r.shareText).toContain("İvme haftalık özet (5 Ekim – 11 Ekim)");
+		expect(r.days).toHaveLength(7);
+		expect(r.days[0]).toMatchObject({ solved: 50, goal: 80, studyDay: true });
+		expect(r.days[6]).toMatchObject({ studyDay: false, goal: 0 });
+	});
+
+	it("geçmiş haftalar ve deneme trendi döner; başka aile göremez", async () => {
+		const { g, child, s } = await reportFamily();
+		await call(
+			appRouter.questions.setGoals,
+			{ childId: child.id, goals: [{ subject: "matematik", questions: 20 }] },
+			{ context: g },
+		);
+		await call(
+			appRouter.questions.log,
+			{ subject: "matematik", solved: 20, date: "2026-10-01" },
+			{ context: s },
+		);
+		const h = await call(
+			appRouter.report.history,
+			{ childId: child.id },
+			{ context: g },
+		);
+		expect(h.weeks).toHaveLength(8);
+		expect(h.weeks.at(-1)?.weekStart).toBe("2026-10-05");
+		// 1 Ekim bir önceki haftaya düşer
+		expect(h.weeks.at(-2)).toMatchObject({
+			weekStart: "2026-09-28",
+			solved: 20,
+		});
+		expect(h.exams).toEqual([]);
+		const other = await family();
+		await expect(
+			call(appRouter.report.week, { childId: child.id }, { context: other.g }),
+		).rejects.toMatchObject({ code: "NOT_FOUND" });
+		await expect(
+			call(appRouter.report.history, { childId: child.id }, { context: s }),
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+	});
+
+	it("konu haritası ücretlidir: yetki yokken kilitli, denemede 4 haftalık konular", async () => {
+		const { g, child } = await reportFamily();
+		const locked = await call(
+			appRouter.library.topicMap,
+			{ childId: child.id },
+			{ context: g },
+		);
+		expect(locked.locked).toBe(true);
+		await call(
+			appRouter.subscription.startTrial,
+			{ childId: child.id },
+			{ context: g },
+		);
+		const map = await call(
+			appRouter.library.topicMap,
+			{ childId: child.id },
+			{ context: g },
+		);
+		expect(map.locked).toBe(false);
+		expect(map.weeks).toHaveLength(4);
+		expect(map.weeks[0]?.weekStart).toBe("2026-10-05");
+		const mat = map.weeks[0]?.subjects.find((x) => x.subject === "matematik");
+		expect(
+			(mat?.topics.length ?? 0) + (mat?.units.length ?? 0),
+		).toBeGreaterThan(0);
 	});
 });
 

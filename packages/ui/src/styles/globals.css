@@ -163,6 +163,7 @@
 		@apply font-sans bg-background text-foreground;
 		/* Mobilde sayfa yana kaymasın; çentikli telefonlarda kenar boşlukları (viewport-fit=cover) */
 		overflow-x: hidden;
+		/* biome-ignore lint/suspicious/noDuplicateProperties: clip desteklemeyen tarayıcı için hidden yedek */
 		overflow-x: clip;
 		padding-left: env(safe-area-inset-left);
 		padding-right: env(safe-area-inset-right);
@@ -170,6 +171,7 @@
 	html {
 		@apply font-sans;
 		overflow-x: hidden;
+		/* biome-ignore lint/suspicious/noDuplicateProperties: clip desteklemeyen tarayıcı için hidden yedek */
 		overflow-x: clip;
 		/* Dar ekranda yazı boyutu otomatik büyütülmesin */
 		-webkit-text-size-adjust: 100%;

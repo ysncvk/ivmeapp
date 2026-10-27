@@ -7,6 +7,7 @@ export * from "./library";
 export * from "./limits";
 export * from "./provider";
 export * from "./questions";
+export * from "./report";
 export * from "./reward";
 export * from "./rewards";
 export * from "./types";

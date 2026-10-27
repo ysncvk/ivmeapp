@@ -9,11 +9,18 @@ import {
 import { childSubject } from "@ivmeapp/db/schema/domain";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-
-import { resolveFamilyChild } from "../authz";
+import {
+	resolveFamilyChild,
+	resolveGuardianChild as resolveOwnChild,
+} from "../authz";
 import { allBooks, curriculumFor, SUBJECTS } from "../catalog";
 import { clock } from "../context";
-import { familyProcedure, protectedProcedure } from "../index";
+import {
+	familyProcedure,
+	guardianProcedure,
+	protectedProcedure,
+} from "../index";
+import { childHasPlanAccess } from "../services/plan";
 
 export const libraryRouter = {
 	/** Kütüphanedeki kaynaklar (yalnızca olgusal yapı, ADR-0004). */
@@ -72,5 +79,51 @@ export const libraryRouter = {
 					onBreak: onBreak?.title ?? null,
 				};
 			});
+		}),
+};
+
+/**
+ * Aylık konu haritası (ADR-0013 madde 8, ücretli): önümüzdeki 4 haftanın konuları, ders başına.
+ * Somut görevler (kaynak, sayfa, test) haritada yoktur; her hafta başında son denemeye göre üretilir.
+ */
+export const topicMapRouter = {
+	topicMap: guardianProcedure
+		.input(z.object({ childId: z.string() }))
+		.handler(async ({ context, input }) => {
+			const child = await resolveOwnChild(context, input.childId);
+			const now = clock(context);
+			if (!(await childHasPlanAccess(context.db, child.id, now))) {
+				return { locked: true as const, weeks: [] };
+			}
+			const rows = await context.db
+				.select()
+				.from(childSubject)
+				.where(eq(childSubject.childId, child.id));
+			const monday = mondayOf(istanbulDate(now));
+			const weeks = Array.from({ length: 4 }, (_, i) => {
+				const weekStart = addDays(monday, 7 * i);
+				const subjects = SUBJECTS.flatMap((subject) => {
+					const row = rows.find((r) => r.subject === subject);
+					if (row && !row.enabled) return [];
+					const curriculum = curriculumFor(subject as Subject, child.grade);
+					if (!curriculum) return [];
+					const shifted = addDays(weekStart, -7 * (row?.weekOffset ?? 0));
+					const week = weekFor(curriculum, shifted);
+					const onBreak = periodFor(curriculum.breaks, shifted);
+					return [
+						{
+							subject,
+							topics: week?.topics ?? [],
+							units: (week?.unitIds ?? []).flatMap((id) => {
+								const u = curriculum.units.find((x) => x.id === id);
+								return u ? [u.title] : [];
+							}),
+							onBreak: onBreak?.title ?? null,
+						},
+					];
+				});
+				return { weekStart, subjects };
+			});
+			return { locked: false as const, weeks };
 		}),
 };

@@ -146,3 +146,31 @@ Durum: ✅ uygulandı · 💬 tartışılacak · 🔁 geri alınabilir
   görev kartlarının üstünde, plan yoksa tek başına görünür.
 - **Tartışılacak:** Pilot sonrası plan motoru ile birleştirme (hedefi test sırasına çevirmek) ya da
   planı arayüzde tamamen gizlemek.
+
+### K-021: Soru hedefi ve koçluk birleşti: hedef ücretsiz, koçluk "hangi test"i söyler ✅💬
+- **Ne:** Günlük soru hedefi (K-020) ücretsiz kalır. Ücretli koçluk açıkken aynı hedef günlük test
+  sayısına çevrilir (`testsPerDay`, yukarı yuvarlar: 50 soru, test başına 12 soru → 5 test) ve motor
+  her çalışma günü her hedefli derse tam o kadar test koyar (`PlanSettings.dailyTests`). Hedef varken
+  günlük süre ayarı kullanılmaz, yük hedeften türer. Test işaretlemek o günün soru sayacına testin
+  soru sayısını ekler, geri almak düşer (tek ilerleme ölçüsü çözülen sorudur). Okul ödevi bu yuvalara
+  **ek** girer, hiçbir testi düşürmez. Hedef değişince işaretlenmemiş plan yeniden kurulur.
+- **Ödül:** Plan görevi olmayan (ücretsiz) çocukta günlük hedefi tutturmak ödülü besler; planı olan
+  çocukta görevler zaten hedefin karşılığı olduğu için çift sayılmaz.
+- **Neden yukarı yuvarlama:** Çocuk önerilen testlerin hepsini bitirdiğinde hedef de tutmalı. Bedeli:
+  hedefin en fazla bir test kadar (≈12 soru) üstünde yük.
+- **Tartışılacak:** Ödevin yük sayılıp sayılmaması (şimdi ek), test başına soru sayısı bilinmeyen
+  kitapta 12 varsayımı.
+
+### K-022: Ödev geçmiş güne planlanmaz ✅
+- **Ne:** `homeworkDay` bugünü bilir: bu haftaysa bugünden önceki günleri eler, teslim geçmişse bugüne
+  koyar. Plana bağlı ama geçmiş güne düşüp yapılmamış ödev açık ödev listesinde kalır.
+- **Neden:** Teslim tarihsiz ödev haftanın ilk gününe konuyor ve çocuğun ekranında hiç görünmüyordu
+  (ADR-0013 madde 7: hafta içinde girilen ödev girildiği günden itibaren plana girer).
+
+### K-023: Veli raporu ücretsiz; konu haritası ücretli ✅
+- **Ne:** Haftalık özet (soru, çalışılan gün, hedef oranı, önceki haftayla fark, ödev, deneme), 8 haftalık
+  gidişat, deneme trendi ve zayıf konular ücretsiz ("ne oldu", ADR-0006). Önümüzdeki 4 haftanın konu
+  haritası ücretli (ADR-0013 madde 8, ADR-0014). Özet düz metin olarak paylaşılır/kopyalanır
+  (e-posta/WhatsApp sağlayıcısı olmadığı için). Seri (streak) gösterilmez (ADR-0016).
+- **Cümleler sayıya ek getirmez:** Türkçe ek uyumu (3'ünde/3'inde) sayıya bağlıdır; metinler ek
+  gerektirmeyecek biçimde kurulur.
