@@ -130,9 +130,9 @@ function AppBar({
 }) {
 	return (
 		<header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur">
-			<div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-3 sm:max-w-xl md:max-w-4xl lg:max-w-5xl">
-				<div className="flex items-center gap-2.5">
-					<div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-ivme-orange to-ivme-orange-deep font-extrabold text-white">
+			<div className="mx-auto flex w-full max-w-md flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 sm:max-w-xl md:max-w-4xl lg:max-w-5xl">
+				<div className="flex min-w-0 items-center gap-2.5">
+					<div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-ivme-orange to-ivme-orange-deep font-extrabold text-white">
 						İ
 					</div>
 					<div className="leading-tight">
@@ -142,29 +142,7 @@ function AppBar({
 						</p>
 					</div>
 				</div>
-				<div className="flex items-center gap-1.5">
-					<nav
-						aria-label="Çocuk seç"
-						className="flex gap-1.5 rounded-full bg-muted p-1"
-					>
-						{childProfiles.map((c) => (
-							<button
-								key={c.id}
-								type="button"
-								aria-pressed={c.id === activeId}
-								onClick={() => onSelect(c.id)}
-								className={cn(
-									"min-h-9 rounded-full px-4 font-bold text-sm transition-colors",
-									"outline-none focus-visible:ring-4 focus-visible:ring-ring/40",
-									c.id === activeId
-										? "bg-primary text-primary-foreground shadow-sm"
-										: "text-muted-foreground hover:text-foreground",
-								)}
-							>
-								{c.name}
-							</button>
-						))}
-					</nav>
+				<div className="flex shrink-0 items-center gap-1.5">
 					{actions.onAddChild && (
 						<button
 							type="button"
@@ -194,6 +172,28 @@ function AppBar({
 						<Settings className="size-5" />
 					</button>
 				</div>
+				<nav
+					aria-label="Çocuk seç"
+					className="order-last flex max-w-full basis-full gap-1.5 overflow-x-auto rounded-full bg-muted p-1 [scrollbar-width:none] md:order-none md:basis-auto [&::-webkit-scrollbar]:hidden"
+				>
+					{childProfiles.map((c) => (
+						<button
+							key={c.id}
+							type="button"
+							aria-pressed={c.id === activeId}
+							onClick={() => onSelect(c.id)}
+							className={cn(
+								"min-h-9 shrink-0 whitespace-nowrap rounded-full px-4 font-bold text-sm transition-colors",
+								"outline-none focus-visible:ring-4 focus-visible:ring-ring/40",
+								c.id === activeId
+									? "bg-primary text-primary-foreground shadow-sm"
+									: "text-muted-foreground hover:text-foreground",
+							)}
+						>
+							{c.name}
+						</button>
+					))}
+				</nav>
 			</div>
 		</header>
 	);
