@@ -128,3 +128,21 @@ Durum: ✅ uygulandı · 💬 tartışılacak · 🔁 geri alınabilir
 - **Ne:** Erişimi bitmiş aboneliklerde (iptalden `retainUntil`, bitmemiş denemede deneme bitişinden
   183 gün sonra) `plan` kayıtları silinir. Ödev, deneme ve ödül kayıtları ücretsiz katmandadır
   ve kalır. Pazar 18:00 (İstanbul) işi yalnızca erişimi olan çocuklar için gelecek haftayı kurar.
+
+## Basit mod
+
+### K-020: "Günlük soru hedefi" planın yanında, ondan bağımsız çalışan basit moddur ✅💬
+- **Ne:** Veli ders başına günlük soru hedefi koyar (`daily_goal`), çocuk (ya da veli) her gün her
+  derste çözülen soru sayısını yazar (`question_log`, mutlak değer; son 7 güne geri dönük
+  düzeltilebilir). Veli ekranında haftalık toplam ve gün gün çubuklar, çocuk ekranında ders başına
+  ilerleme çubuğu görünür. Çocuğun seçtiği kitap varsa hedef "yaklaşık N test" olarak da yazılır
+  (hedef ÷ kitabın test başına soru sayısı).
+- **Neden:** Evde pilotun sorusu "çocuk her gün çalışıyor mu, veli görebiliyor mu"; bunu yıllık plan,
+  kitap eşlemesi ya da abonelik olmadan yanıtlar. İçerik (yıllık plan, kitap içindekileri)
+  olmadan da diğer sınıflarda çalışır.
+- **Kapsam dışı (bilinçli):** Hangi testten devam edileceğini izleme (imleç), doğru/yanlış sayısı,
+  süre. Abonelik şartı yoktur, her zaman açıktır.
+- **Plan ile ilişkisi:** Plan ve ödevler olduğu gibi çalışır. Hedef tanımlıysa öğrenci ekranında
+  görev kartlarının üstünde, plan yoksa tek başına görünür.
+- **Tartışılacak:** Pilot sonrası plan motoru ile birleştirme (hedefi test sırasına çevirmek) ya da
+  planı arayüzde tamamen gizlemek.

@@ -9,6 +9,8 @@ import {
 	Sparkles,
 } from "lucide-react";
 
+import type { ReactNode } from "react";
+
 import { SUBJECTS } from "./subjects";
 
 export type TodayTask = PlanTask & { done: boolean };
@@ -35,6 +37,8 @@ interface Props {
 	reward: TodayReward | null;
 	/** Ücretli plan yok: yalnızca ödevler gösterilir (ADR-0014). */
 	locked?: boolean;
+	/** Basit mod: günlük soru hedefi kartları. Plan görevi yoksa "0 görev" başlığı yerine selam gösterilir. */
+	questions?: ReactNode;
 	onToggleTask: (id: string, done: boolean) => void;
 	onToggleHomework?: (id: string, done: boolean) => void;
 	onSignOut?: () => void;
@@ -53,6 +57,7 @@ export function TodayScreen({
 	homework = [],
 	reward,
 	locked = false,
+	questions,
 	onToggleTask,
 	onToggleHomework,
 	onSignOut,
@@ -60,20 +65,34 @@ export function TodayScreen({
 	const doneCount = tasks.filter((t) => t.done).length;
 	const allDone = tasks.length > 0 && doneCount === tasks.length;
 	const topics = [...new Set(tasks.map((t) => t.topic))];
+	const questionsOnly = questions != null && tasks.length === 0;
 
 	return (
 		<div className="min-h-svh bg-[radial-gradient(60rem_40rem_at_50%_-10%,color-mix(in_oklch,var(--ivme-violet)_16%,transparent),transparent)]">
 			<main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 pt-6 pb-20 sm:max-w-xl sm:pt-10 md:max-w-2xl">
-				<Hero
-					name={studentName}
-					total={tasks.length}
-					done={doneCount}
-					topics={topics}
-				/>
+				{questionsOnly ? (
+					<header className="rounded-3xl bg-gradient-to-br from-ivme-indigo-deep via-[oklch(0.42_0.18_280)] to-ivme-violet p-6 text-white shadow-primary/25 shadow-xl">
+						<p className="font-semibold text-sm text-white/80">
+							Merhaba, {studentName}
+						</p>
+						<h1 className="mt-1 font-extrabold text-4xl tracking-tight">
+							Bugün
+						</h1>
+					</header>
+				) : (
+					<Hero
+						name={studentName}
+						total={tasks.length}
+						done={doneCount}
+						topics={topics}
+					/>
+				)}
 
 				{reward && <RewardCard reward={reward} />}
 
-				{locked && (
+				{questions}
+
+				{locked && !questionsOnly && (
 					<p className="rounded-2xl bg-muted px-4 py-3 text-center font-semibold text-muted-foreground text-sm">
 						Günlük planın için velinle konuş. Ödevlerin aşağıda.
 					</p>

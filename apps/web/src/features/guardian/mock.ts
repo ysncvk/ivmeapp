@@ -36,6 +36,25 @@ export interface RewardTier {
 	progress?: ReturnType<typeof rewardProgress>;
 }
 
+/** Basit mod: günlük soru hedefi özeti (API `questions.overview`). */
+export interface QuestionsData {
+	date: string;
+	subjects: {
+		subject: Subject;
+		goal: number;
+		solvedToday: number;
+		tests: number | null;
+	}[];
+	days: {
+		day: number;
+		date: string;
+		studyDay: boolean;
+		goal: number;
+		solved: number;
+	}[];
+	week: { goal: number; solved: number };
+}
+
 export interface ChildData {
 	id: string;
 	name: string;
@@ -50,6 +69,7 @@ export interface ChildData {
 	weakTopics: WeakTopic[];
 	homework: HomeworkItem[];
 	rewards: RewardTier[];
+	questions?: QuestionsData;
 }
 
 const subj = (

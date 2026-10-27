@@ -8,6 +8,7 @@ import { groupsRouter, teacherRouter } from "./groups";
 import { homeworkRouter } from "./homework";
 import { libraryRouter } from "./library";
 import { planRouter } from "./plan";
+import { questionsRouter } from "./questions";
 import { rewardsRouter } from "./rewards";
 import { subscriptionRouter } from "./subscription";
 
@@ -18,6 +19,7 @@ export const appRouter = {
 	account: accountRouter,
 	children: childrenRouter,
 	plan: planRouter,
+	questions: questionsRouter,
 	homework: homeworkRouter,
 	exam: examRouter,
 	rewards: rewardsRouter,

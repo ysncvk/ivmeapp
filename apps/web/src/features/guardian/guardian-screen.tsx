@@ -17,7 +17,7 @@ import { useState } from "react";
 
 import { SUBJECTS } from "../student/subjects";
 import { DayColumns, ResultBars } from "./charts";
-import type { ChildData, RewardTier } from "./mock";
+import type { ChildData, QuestionsData, RewardTier } from "./mock";
 
 const dateFmt = new Intl.DateTimeFormat("tr-TR", {
 	day: "numeric",
@@ -33,6 +33,7 @@ export interface GuardianActions {
 	onToggleHomework?: (childId: string, id: string, done: boolean) => void;
 	onAddExam?: (childId: string) => void;
 	onEditRewards?: (childId: string) => void;
+	onEditQuestions?: (childId: string) => void;
 	onGrant?: (childId: string, tier: RewardTier["tier"], given: boolean) => void;
 }
 
@@ -68,6 +69,12 @@ export function GuardianScreen({
 				{child ? (
 					<div className="grid gap-4 md:grid-cols-2 md:items-start md:gap-5">
 						<div className="flex flex-col gap-4 md:gap-5">
+							<QuestionsCard
+								key={`q-${child.id}`}
+								childId={child.id}
+								data={child.questions}
+								actions={actions}
+							/>
 							<WeekCard key={`w-${child.id}`} child={child} />
 							<RewardsCard
 								key={`r-${child.id}`}
@@ -573,6 +580,130 @@ function RewardsCard({
 				<Settings className="size-4" />
 				Ödülleri düzenle
 			</button>
+		</Card>
+	);
+}
+
+const WEEKDAYS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+
+/** Basit mod: ders başına günlük soru hedefi ve haftalık gidişat. */
+function QuestionsCard({
+	childId,
+	data,
+	actions,
+}: {
+	childId: string;
+	data?: QuestionsData;
+	actions: GuardianActions;
+}) {
+	const edit = (
+		<button
+			type="button"
+			onClick={() => actions.onEditQuestions?.(childId)}
+			className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-bold text-sm outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+		>
+			<Settings className="size-4" />
+			{data && data.subjects.length > 0 ? "Hedefleri düzenle" : "Hedef belirle"}
+		</button>
+	);
+	if (!data || data.subjects.length === 0) {
+		return (
+			<Card title="Günlük soru hedefi" hint="Basit takip">
+				<p className="mt-3 text-muted-foreground text-sm">
+					Her ders için günde kaç soru çözüleceğini belirle. Çocuk kendi
+					ekranından çözdüğü soru sayısını yazar, sen buradan görürsün.
+				</p>
+				{edit}
+			</Card>
+		);
+	}
+	const { week } = data;
+	const pct = week.goal === 0 ? 0 : Math.round((week.solved / week.goal) * 100);
+	return (
+		<Card title="Günlük soru hedefi" hint="Bu hafta çözülen soru">
+			<div className="mt-3 flex items-end gap-2">
+				<span className="font-extrabold text-6xl leading-none tracking-tight">
+					{week.solved}
+				</span>
+				<span className="pb-1 font-bold text-2xl text-muted-foreground">
+					/ {week.goal} soru
+				</span>
+				<span className="ml-auto rounded-full bg-accent px-3 py-1 font-extrabold text-accent-foreground text-sm">
+					%{pct}
+				</span>
+			</div>
+			<figure
+				aria-label={`Günlük çözülen soru: ${data.days
+					.map((d) => `${WEEKDAYS[d.day - 1]} ${d.solved}`)
+					.join(", ")}`}
+				className="mt-5"
+			>
+				<div className="grid grid-cols-7 gap-1.5">
+					{data.days.map((d) => {
+						const ratio =
+							d.goal === 0
+								? d.solved > 0
+									? 1
+									: 0
+								: Math.min(1, d.solved / d.goal);
+						const future = d.date > data.date;
+						return (
+							<div key={d.date} className="flex flex-col items-center gap-1.5">
+								<span
+									className={cn(
+										"font-bold text-xs tabular-nums",
+										future ? "text-muted-foreground/70" : "text-foreground",
+									)}
+								>
+									{future ? "·" : d.solved}
+								</span>
+								<div className="flex h-20 w-6 items-end overflow-hidden rounded-t-[4px] bg-muted">
+									<div
+										className="w-full rounded-t-[4px] bg-primary transition-[height] duration-500"
+										style={{ height: `${ratio * 100}%` }}
+									/>
+								</div>
+								<span
+									className={cn(
+										"text-xs",
+										d.date === data.date
+											? "font-extrabold text-foreground"
+											: "font-semibold text-muted-foreground",
+										!d.studyDay && "opacity-50",
+									)}
+								>
+									{WEEKDAYS[d.day - 1]}
+								</span>
+							</div>
+						);
+					})}
+				</div>
+			</figure>
+			<ul className="mt-4 flex flex-col gap-2">
+				{data.subjects.map((s) => {
+					const meta = SUBJECTS[s.subject];
+					return (
+						<li
+							key={s.subject}
+							className="flex items-center justify-between gap-3 rounded-2xl border px-3 py-2"
+						>
+							<span className={cn("font-bold text-sm", meta.text)}>
+								{meta.label}
+							</span>
+							<span className="font-semibold text-sm tabular-nums">
+								Bugün <b>{s.solvedToday}</b> / {s.goal}
+								{s.tests !== null && (
+									<span className="text-muted-foreground">
+										{" "}
+										(~{s.tests} test)
+									</span>
+								)}
+							</span>
+						</li>
+					);
+				})}
+			</ul>
+			{edit}
 		</Card>
 	);
 }

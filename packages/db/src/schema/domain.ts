@@ -152,6 +152,46 @@ export const subscription = pgTable("subscription", {
 		.notNull(),
 });
 
+/** Basit mod: ders başına günlük soru hedefi. Satır yoksa o ders için hedef yoktur. */
+export const dailyGoal = pgTable(
+	"daily_goal",
+	{
+		childId: text("child_id")
+			.notNull()
+			.references(() => child.id, { onDelete: "cascade" }),
+		subject: subjectEnum("subject").notNull(),
+		questions: integer("questions").notNull(),
+	},
+	(t) => [
+		primaryKey({ columns: [t.childId, t.subject] }),
+		check("daily_goal_range", sql`${t.questions} between 1 and 500`),
+	],
+);
+
+/** Basit mod: bir günde bir derste çözülen soru sayısı (mutlak değer, toplama değil). */
+export const questionLog = pgTable(
+	"question_log",
+	{
+		childId: text("child_id")
+			.notNull()
+			.references(() => child.id, { onDelete: "cascade" }),
+		subject: subjectEnum("subject").notNull(),
+		day: date("day", { mode: "string" }).notNull(),
+		solved: integer("solved").notNull(),
+		loggedByUserId: text("logged_by_user_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => new Date())
+			.notNull(),
+	},
+	(t) => [
+		primaryKey({ columns: [t.childId, t.subject, t.day] }),
+		check("question_log_range", sql`${t.solved} between 0 and 1000`),
+	],
+);
+
 /** Haftalık plan. Her hafta başında üretilir ve hafta içinde yalnızca kullanıcı eylemiyle değişir. */
 export const plan = pgTable(
 	"plan",

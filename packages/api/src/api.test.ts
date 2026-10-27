@@ -408,6 +408,155 @@ describe("ödev, deneme ve öğretmen", () => {
 	});
 });
 
+describe("soru hedefi (basit mod)", () => {
+	async function studentCtx(username: string | null) {
+		const [u] = await t.db
+			.select()
+			.from(user)
+			.where(eq(user.username, username ?? ""));
+		return ctxFor(u?.id ?? null);
+	}
+
+	it("veli hedef koyar, çocuk soru sayısını yazar; abonelik gerekmez", async () => {
+		const { g, child } = await family();
+		await call(
+			appRouter.children.settings.update,
+			{ childId: child.id, sources: BOOKS },
+			{ context: g },
+		);
+		await call(
+			appRouter.questions.setGoals,
+			{
+				childId: child.id,
+				goals: [
+					{ subject: "matematik", questions: 50 },
+					{ subject: "fen", questions: 30 },
+				],
+			},
+			{ context: g },
+		);
+		const s = await studentCtx(child.username);
+
+		let o = await call(appRouter.questions.overview, {}, { context: s });
+		expect(o.date).toBe("2026-10-05");
+		expect(o.subjects.map((x) => [x.subject, x.goal, x.solvedToday])).toEqual([
+			["matematik", 50, 0],
+			["fen", 30, 0],
+		]);
+		// Fenomen kitapları test başına 12 soru: 50 → 5 test, 30 → 3 test
+		expect(o.subjects.map((x) => x.tests)).toEqual([5, 3]);
+		// 6 çalışma günü × (50 + 30)
+		expect(o.week).toEqual({ goal: 480, solved: 0 });
+
+		await call(
+			appRouter.questions.log,
+			{ subject: "matematik", solved: 40 },
+			{ context: s },
+		);
+		// Aynı güne tekrar yazmak toplamaz, değiştirir
+		await call(
+			appRouter.questions.log,
+			{ subject: "matematik", solved: 45 },
+			{ context: s },
+		);
+		await call(
+			appRouter.questions.log,
+			{ subject: "fen", solved: 30 },
+			{ context: s },
+		);
+		o = await call(appRouter.questions.overview, {}, { context: s });
+		expect(o.subjects.map((x) => x.solvedToday)).toEqual([45, 30]);
+		expect(o.week.solved).toBe(75);
+		expect(o.days[0]).toMatchObject({
+			date: "2026-10-05",
+			solved: 75,
+			goal: 80,
+		});
+		// Pazar çalışma günü değil: hedef yok
+		expect(o.days[6]).toMatchObject({ studyDay: false, goal: 0 });
+
+		// Veli de aynı özeti görür ve düzeltebilir
+		const gv = await call(
+			appRouter.questions.overview,
+			{ childId: child.id },
+			{ context: g },
+		);
+		expect(gv.week.solved).toBe(75);
+	});
+
+	it("hedefsiz ders, gelecek ve çok eski tarih reddedilir; 0 hedefi kaldırır", async () => {
+		const { g, child } = await family();
+		await call(
+			appRouter.questions.setGoals,
+			{ childId: child.id, goals: [{ subject: "turkce", questions: 20 }] },
+			{ context: g },
+		);
+		const s = await studentCtx(child.username);
+		await expect(
+			call(
+				appRouter.questions.log,
+				{ subject: "fen", solved: 5 },
+				{ context: s },
+			),
+		).rejects.toMatchObject({ message: "no_goal" });
+		for (const date of ["2026-10-06", "2026-09-28"]) {
+			await expect(
+				call(
+					appRouter.questions.log,
+					{ subject: "turkce", solved: 5, date },
+					{ context: s },
+				),
+			).rejects.toMatchObject({ message: "date_out_of_range" });
+		}
+		await call(
+			appRouter.questions.log,
+			{ subject: "turkce", solved: 5, date: "2026-10-01" },
+			{ context: s },
+		);
+		await call(
+			appRouter.questions.setGoals,
+			{ childId: child.id, goals: [{ subject: "turkce", questions: 0 }] },
+			{ context: g },
+		);
+		const o = await call(appRouter.questions.overview, {}, { context: s });
+		expect(o.subjects).toEqual([]);
+	});
+
+	it("çocuk hedef koyamaz; başka ailenin çocuğuna ve öğretmene kapalı", async () => {
+		const a = await family();
+		const b = await family();
+		const s = await studentCtx(a.child.username);
+		await expect(
+			call(
+				appRouter.questions.setGoals,
+				{ childId: a.child.id, goals: [{ subject: "fen", questions: 500 }] },
+				{ context: s },
+			),
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+		await expect(
+			call(
+				appRouter.questions.setGoals,
+				{ childId: a.child.id, goals: [{ subject: "fen", questions: 10 }] },
+				{ context: b.g },
+			),
+		).rejects.toMatchObject({ code: "NOT_FOUND" });
+		await expect(
+			call(
+				appRouter.questions.overview,
+				{ childId: a.child.id },
+				{ context: b.g },
+			),
+		).rejects.toMatchObject({ code: "NOT_FOUND" });
+		await expect(
+			call(
+				appRouter.questions.overview,
+				{},
+				{ context: await ctxFor(await signUp("teacher")) },
+			),
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+	});
+});
+
 describe("bakım işleri", () => {
 	it("Pazar işi gelecek haftanın planını bir kez kurar; saklama süresi dolan plan silinir", async () => {
 		const { g, child } = await family();

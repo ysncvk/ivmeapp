@@ -889,3 +889,85 @@ export function SettingsDialog({
 		</Modal>
 	);
 }
+
+const GOAL_PRESETS = [0, 20, 30, 50, 100] as const;
+
+/** Basit mod: ders başına günlük soru hedefi. 0 = o derste hedef yok. */
+export function QuestionGoalsDialog({
+	childId,
+	onClose,
+}: {
+	childId: string;
+	onClose: () => void;
+}) {
+	const qc = useQueryClient();
+	const current = useQuery(
+		orpc.questions.overview.queryOptions({ input: { childId } }),
+	);
+	const [edits, setEdits] = useState<Partial<Record<Subject, number>>>({});
+	const save = useMutation(
+		orpc.questions.setGoals.mutationOptions({
+			onSuccess: async () => {
+				await qc.invalidateQueries();
+				onClose();
+			},
+		}),
+	);
+	const value = (s: Subject) =>
+		edits[s] ?? current.data?.subjects.find((x) => x.subject === s)?.goal ?? 0;
+	return (
+		<Modal title="Günlük soru hedefi" onClose={onClose}>
+			<p className="text-muted-foreground text-sm">
+				Her ders için günde kaç soru çözülsün? Hedef koymadığın ders çocuğun
+				ekranında görünmez. Çalışma günleri çocuk ayarlarındaki günlerdir.
+			</p>
+			{(Object.keys(SUBJECTS) as Subject[]).map((s) => (
+				<div key={s} className="rounded-2xl border p-3">
+					<Field label={SUBJECTS[s].label}>
+						<TextInput
+							type="number"
+							inputMode="numeric"
+							min={0}
+							max={500}
+							value={value(s)}
+							onChange={(e) =>
+								setEdits({
+									...edits,
+									[s]: Math.min(500, Math.max(0, Number(e.target.value) || 0)),
+								})
+							}
+						/>
+					</Field>
+					<div className="mt-2 flex flex-wrap gap-2">
+						{GOAL_PRESETS.map((n) => (
+							<Chip
+								key={n}
+								active={value(s) === n}
+								onClick={() => setEdits({ ...edits, [s]: n })}
+							>
+								{n === 0 ? "Yok" : n}
+							</Chip>
+						))}
+					</div>
+				</div>
+			))}
+			<ErrorText>
+				{save.isError ? errorMessage(save.error) : undefined}
+			</ErrorText>
+			<PrimaryButton
+				disabled={save.isPending || current.isPending}
+				onClick={() =>
+					save.mutate({
+						childId,
+						goals: (Object.keys(SUBJECTS) as Subject[]).map((s) => ({
+							subject: s,
+							questions: value(s),
+						})),
+					})
+				}
+			>
+				Kaydet
+			</PrimaryButton>
+		</Modal>
+	);
+}

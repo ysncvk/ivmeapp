@@ -17,6 +17,7 @@ import {
 	ConsentDialog,
 	ExamDialog,
 	HomeworkDialog,
+	QuestionGoalsDialog,
 	RewardsDialog,
 	SettingsDialog,
 } from "./dialogs";
@@ -35,6 +36,7 @@ type Dialog =
 	| { kind: "homework"; childId: string }
 	| { kind: "exam"; childId: string }
 	| { kind: "rewards"; childId: string }
+	| { kind: "questions"; childId: string }
 	| { kind: "settings"; childId: string };
 
 export function GuardianApp() {
@@ -49,7 +51,7 @@ export function GuardianApp() {
 	const enabled = !!id;
 	const input = { childId: id ?? "" };
 
-	const [week, diagnosis, homework, rewards, sub] = useQueries({
+	const [week, diagnosis, homework, rewards, sub, questions] = useQueries({
 		queries: [
 			{ ...orpc.plan.week.queryOptions({ input }), enabled },
 			{ ...orpc.exam.diagnosis.queryOptions({ input }), enabled },
@@ -61,6 +63,7 @@ export function GuardianApp() {
 			},
 			{ ...orpc.rewards.list.queryOptions({ input }), enabled },
 			{ ...orpc.subscription.status.queryOptions({ input }), enabled },
+			{ ...orpc.questions.overview.queryOptions({ input }), enabled },
 		],
 	});
 	const list = useQuery(orpc.children.list.queryOptions());
@@ -112,6 +115,7 @@ export function GuardianApp() {
 						status: sub.data.status,
 					}
 				: undefined,
+			questions: questions.data,
 			exam: latest ? (latest as unknown as ExamResult) : null,
 			weakTopics: diagnosis.data?.weakTopics ?? [],
 			homework: (homework.data ?? [])
@@ -158,6 +162,7 @@ export function GuardianApp() {
 			toggleHw.mutate({ childId, homeworkId, done }),
 		onAddExam: (childId) => setDialog({ kind: "exam", childId }),
 		onEditRewards: (childId) => setDialog({ kind: "rewards", childId }),
+		onEditQuestions: (childId) => setDialog({ kind: "questions", childId }),
 		onGrant: (childId, tier, given) =>
 			(given ? grant : ungrant).mutate({ childId, tier }),
 	};
@@ -197,6 +202,9 @@ export function GuardianApp() {
 			)}
 			{dialog?.kind === "exam" && (
 				<ExamDialog childId={dialog.childId} onClose={close} />
+			)}
+			{dialog?.kind === "questions" && (
+				<QuestionGoalsDialog childId={dialog.childId} onClose={close} />
 			)}
 			{dialog?.kind === "rewards" && (
 				<RewardsDialog childId={dialog.childId} onClose={close} />
