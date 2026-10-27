@@ -69,6 +69,12 @@ export interface ChildData {
 	weakTopics: WeakTopic[];
 	homework: HomeworkItem[];
 	rewards: RewardTier[];
+	/** Teslim edilen ödüller, yeniden eskiye. */
+	rewardHistory?: {
+		tier: RewardTier["tier"];
+		title: string;
+		grantedAt: Date;
+	}[];
 	questions?: QuestionsData;
 }
 

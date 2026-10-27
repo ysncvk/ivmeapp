@@ -5,11 +5,14 @@ import {
 	Check,
 	Clock,
 	Gift,
+	LogOut,
 	PartyPopper,
 	Sparkles,
 } from "lucide-react";
 
 import type { ReactNode } from "react";
+
+import { Brand } from "@/components/kit";
 
 import { SUBJECTS } from "./subjects";
 
@@ -35,6 +38,8 @@ interface Props {
 	tasks: TodayTask[];
 	homework?: TodayHomework[];
 	reward: TodayReward | null;
+	/** Diğer seviyelerdeki ödüller: kısa satır olarak ana ödülün altında görünür. */
+	otherRewards?: TodayReward[];
 	/** Ücretli plan yok: yalnızca ödevler gösterilir (ADR-0014). */
 	locked?: boolean;
 	/** Basit mod: günlük soru hedefi kartları. Plan görevi yoksa "0 görev" başlığı yerine selam gösterilir. */
@@ -58,6 +63,7 @@ export function TodayScreen({
 	tasks,
 	homework = [],
 	reward,
+	otherRewards = [],
 	locked = false,
 	questions,
 	groupedSubjects = [],
@@ -76,6 +82,21 @@ export function TodayScreen({
 
 	return (
 		<div className="min-h-svh bg-[radial-gradient(60rem_40rem_at_50%_-10%,color-mix(in_oklch,var(--ivme-violet)_16%,transparent),transparent)]">
+			<header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur">
+				<div className="mx-auto flex w-full max-w-md items-center justify-between gap-3 px-4 py-2.5 sm:max-w-xl md:max-w-2xl">
+					<Brand />
+					{onSignOut && (
+						<button
+							type="button"
+							onClick={onSignOut}
+							className="inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-bold text-sm outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+						>
+							<LogOut aria-hidden className="size-4" />
+							Çıkış yap
+						</button>
+					)}
+				</div>
+			</header>
 			<main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 pt-6 pb-20 sm:max-w-xl sm:pt-10 md:max-w-2xl">
 				{questionsOnly ? (
 					<header className="rounded-3xl bg-gradient-to-br from-ivme-indigo-deep via-[oklch(0.42_0.18_280)] to-ivme-violet p-6 text-white shadow-primary/25 shadow-xl">
@@ -96,6 +117,28 @@ export function TodayScreen({
 				)}
 
 				{reward && <RewardCard reward={reward} />}
+				{otherRewards.length > 0 && (
+					<ul
+						aria-label="Diğer ödüller"
+						className="-mt-2 flex flex-col gap-1.5 px-1"
+					>
+						{otherRewards.map((r) => (
+							<li
+								key={r.tier}
+								className="flex items-center justify-between gap-3 rounded-2xl bg-muted/60 px-3 py-2 text-sm"
+							>
+								<span className="min-w-0 truncate font-bold">
+									{TIER_LABEL[r.tier]}: {r.title}
+								</span>
+								<span className="shrink-0 font-semibold text-muted-foreground">
+									{r.progress.unlocked
+										? "🎉 Kazandın"
+										: `${r.progress.remaining} kaldı`}
+								</span>
+							</li>
+						))}
+					</ul>
+				)}
 
 				{questions}
 
@@ -132,16 +175,6 @@ export function TodayScreen({
 							/>
 						))}
 					</section>
-				)}
-
-				{onSignOut && (
-					<button
-						type="button"
-						onClick={onSignOut}
-						className="mx-auto min-h-11 rounded-full px-5 font-bold text-muted-foreground text-sm outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
-					>
-						Çıkış yap
-					</button>
 				)}
 			</main>
 		</div>
@@ -231,7 +264,11 @@ function RewardCard({ reward }: { reward: TodayReward }) {
 	return (
 		<section
 			aria-label={TIER_LABEL[reward.tier]}
-			className="rounded-3xl border bg-card p-4 shadow-sm"
+			className={cn(
+				"rounded-3xl border bg-card p-4 shadow-sm",
+				progress.unlocked &&
+					"border-transparent bg-gradient-to-br from-ivme-orange/15 to-ivme-orange/5 motion-safe:animate-rise",
+			)}
 		>
 			<div className="flex items-center gap-3">
 				<div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-accent text-ivme-orange-deep">

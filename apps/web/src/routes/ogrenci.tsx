@@ -80,6 +80,9 @@ function StudentPage() {
 				) : undefined
 			}
 			reward={r ? { title: r.title, tier: r.tier, progress: r.progress } : null}
+			otherRewards={d.rewards
+				.filter((x) => x !== r)
+				.map((x) => ({ title: x.title, tier: x.tier, progress: x.progress }))}
 			onToggleTask={(taskId, done) => toggleTask.mutate({ taskId, done })}
 			onToggleHomework={(homeworkId, done) =>
 				toggleHw.mutate({ homeworkId, done })

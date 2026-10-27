@@ -1,7 +1,7 @@
 import { istanbulDate } from "@ivmeapp/core";
 import { reward, rewardGrant } from "@ivmeapp/db/schema/domain";
 import { ORPCError } from "@orpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { resolveFamilyChild, resolveGuardianChild } from "../authz";
@@ -58,6 +58,25 @@ export const rewardsRouter = {
 				.delete(reward)
 				.where(and(eq(reward.childId, child.id), eq(reward.tier, input.tier)));
 			return { ok: true };
+		}),
+
+	/** Teslim edilen ödüllerin geçmişi (ADR-0016 madde 4): son 12 teslim, yeniden eskiye. */
+	history: guardianProcedure
+		.input(z.object({ childId: z.string() }))
+		.handler(async ({ context, input }) => {
+			const child = await resolveGuardianChild(context, input.childId);
+			return context.db
+				.select({
+					tier: reward.tier,
+					title: reward.title,
+					periodKey: rewardGrant.periodKey,
+					grantedAt: rewardGrant.grantedAt,
+				})
+				.from(rewardGrant)
+				.innerJoin(reward, eq(reward.id, rewardGrant.rewardId))
+				.where(eq(reward.childId, child.id))
+				.orderBy(desc(rewardGrant.grantedAt))
+				.limit(12);
 		}),
 
 	/** Veli ödülü teslim edildi olarak işaretler; yalnızca hedefe ulaşıldıysa. */

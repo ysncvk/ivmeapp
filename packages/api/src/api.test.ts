@@ -717,6 +717,28 @@ describe("soru hedefi ve koçluk birleşimi", () => {
 			{ context: s },
 		);
 		expect((await progress())?.unlocked).toBe(true);
+
+		// Teslim edilince geçmişe yazılır; başka aile göremez
+		await call(
+			appRouter.rewards.grant,
+			{ childId: child.id, tier: "daily" },
+			{ context: g },
+		);
+		const history = await call(
+			appRouter.rewards.history,
+			{ childId: child.id },
+			{ context: g },
+		);
+		expect(history).toHaveLength(1);
+		expect(history[0]).toMatchObject({ tier: "daily", title: "Sinema" });
+		const other = await family();
+		await expect(
+			call(
+				appRouter.rewards.history,
+				{ childId: child.id },
+				{ context: other.g },
+			),
+		).rejects.toMatchObject({ code: "NOT_FOUND" });
 	});
 });
 

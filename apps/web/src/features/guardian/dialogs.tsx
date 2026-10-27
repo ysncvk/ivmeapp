@@ -1,8 +1,5 @@
-import {
-	checkBlockMinutes,
-	checkDailyBudget,
-	type Subject,
-} from "@ivmeapp/core";
+import type { Subject } from "@ivmeapp/core";
+import { cn } from "@ivmeapp/ui/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -11,7 +8,6 @@ import {
 	ErrorText,
 	errorMessage,
 	Field,
-	GhostButton,
 	Modal,
 	PrimaryButton,
 	Select,
@@ -21,8 +17,6 @@ import { orpc } from "@/utils/orpc";
 import { SUBJECTS } from "../student/subjects";
 
 const SUBJECT_KEYS = Object.keys(SUBJECTS) as Subject[];
-const DAYS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
-
 /** Hukuk incelemesi tamamlanana kadar taslak metin (docs/hukuk-sorulari.md). */
 export const CONSENT_VERSION = "taslak-1";
 
@@ -434,14 +428,26 @@ const TIER_META = [
 		label: "Günlük ödül",
 		hint: "Günün görevlerinin tamamı",
 		pct: 100,
+		ideas: ["30 dk ekstra oyun", "Sevdiği tatlı", "Akşam film izlemek"],
 	},
 	{
 		tier: "weekly",
 		label: "Haftalık ödül",
 		hint: "Haftanın görevlerinin çoğu",
 		pct: 80,
+		ideas: [
+			"Sevdiği menüde yemek",
+			"Parkta ekstra saat",
+			"Arkadaşıyla buluşmak",
+		],
 	},
-	{ tier: "milestone", label: "Büyük ödül", hint: "4 haftalık dönem", pct: 75 },
+	{
+		tier: "milestone",
+		label: "Büyük ödül",
+		hint: "4 haftalık dönem",
+		pct: 75,
+		ideas: ["Sinema ya da maç", "Bisiklet gezisi", "Bir gün dilediği gezi"],
+	},
 ] as const;
 
 export function RewardsDialog({
@@ -491,9 +497,18 @@ export function RewardsDialog({
 	return (
 		<Modal title="Ödülleri düzenle" onClose={onClose}>
 			<p className="text-muted-foreground text-sm">
-				Ödülü sen seç ve sen ver. Hedef, planın tamamlama oranıdır; doğru sayısı
-				ya da süre değil.
+				Ödülü sen seç ve sen ver. Hedef, görevlerin tamamlanma oranıdır; doğru
+				sayısı ya da süre değil.
 			</p>
+			<ul className="list-disc space-y-1 pl-5 text-muted-foreground text-xs">
+				<li>
+					Ödül metnine çocuğu tanımlayan bilgi (soyadı, okul, adres) yazmayın.
+				</li>
+				<li>
+					Küçük ve sık ödüller, büyük ve seyrek ödüllerden daha iyi çalışır.
+					Ödülü kutlama olarak sunun, bir kez verdiğiniz ödülü geri almayın.
+				</li>
+			</ul>
 			{TIER_META.map((m) => {
 				const v = value(m.tier, m.pct);
 				return (
@@ -511,6 +526,20 @@ export function RewardsDialog({
 								}
 							/>
 						</Field>
+						<div className="mt-2 flex flex-wrap gap-2">
+							{m.ideas.map((idea) => (
+								<Chip
+									key={idea}
+									active={v.title === idea}
+									onClick={() =>
+										setEdits({ ...edits, [m.tier]: { ...v, title: idea } })
+									}
+								>
+									{idea}
+								</Chip>
+							))}
+						</div>
+
 						<Field label={`Hedef: görevlerin %${v.pct}'i`}>
 							<input
 								type="range"
@@ -539,376 +568,15 @@ export function RewardsDialog({
 	);
 }
 
-export function SettingsDialog({
+const GOAL_STEP = 10;
+
+/** Basit mod: ders başına günlük soru hedefi. 0 = o derste hedef yok. Sayfada ve pencerede ortak. */
+export function QuestionGoalsEditor({
 	childId,
-	childName,
-	username,
-	onClose,
-	onChildRemoved,
-	onAccountDeleted,
+	onSaved,
 }: {
 	childId: string;
-	childName: string;
-	username: string | null;
-	onClose: () => void;
-	onChildRemoved: () => void;
-	onAccountDeleted: () => void;
-}) {
-	const qc = useQueryClient();
-	const settings = useQuery(
-		orpc.children.settings.get.queryOptions({ input: { childId } }),
-	);
-	const books = useQuery(
-		orpc.children.books.queryOptions({ input: { childId } }),
-	);
-	const status = useQuery(
-		orpc.library.curriculumStatus.queryOptions({ input: { childId } }),
-	);
-	const goalsSet =
-		useQuery(orpc.questions.overview.queryOptions({ input: { childId } })).data
-			?.subjects.length ?? 0;
-	const [draft, setDraft] = useState<NonNullable<typeof settings.data>>();
-	const [message, setMessage] = useState<string>();
-	const [newPassword, setNewPassword] = useState("");
-
-	const s = draft ?? settings.data;
-	const update = useMutation(
-		orpc.children.settings.update.mutationOptions({
-			onSuccess: async (res) => {
-				await qc.invalidateQueries();
-				setMessage(
-					`Kaydedildi. Yeni ayarlar ${res.effectiveFrom} haftasından itibaren geçerli.`,
-				);
-			},
-		}),
-	);
-	const resetPw = useMutation(
-		orpc.children.resetPassword.mutationOptions({
-			onSuccess: () => {
-				setNewPassword("");
-				setMessage("Şifre değişti, çocuğun açık oturumları kapatıldı.");
-			},
-		}),
-	);
-	const rebuild = useMutation(
-		orpc.plan.rebuild.mutationOptions({
-			onSuccess: async () => {
-				await qc.invalidateQueries();
-				setMessage("Bu haftanın planı yeni ayarlarla yeniden kuruldu.");
-			},
-		}),
-	);
-	const remove = useMutation(
-		orpc.children.remove.mutationOptions({
-			onSuccess: async () => {
-				await qc.invalidateQueries();
-				onChildRemoved();
-			},
-		}),
-	);
-
-	const deleteAccount = useMutation(
-		orpc.account.deleteAccount.mutationOptions({ onSuccess: onAccountDeleted }),
-	);
-
-	if (!s) {
-		return (
-			<Modal title="Ayarlar" onClose={onClose}>
-				<p>Yükleniyor…</p>
-			</Modal>
-		);
-	}
-	const set = (p: Partial<typeof s>) => setDraft({ ...s, ...p });
-	const budget = checkDailyBudget(s.dailyBudgetMinutes);
-	const block = checkBlockMinutes(s.blockMinutes);
-
-	return (
-		<Modal title={`${childName} · Ayarlar`} onClose={onClose}>
-			{username && (
-				<p className="text-sm">
-					Giriş kullanıcı adı: <b>{username}</b>
-				</p>
-			)}
-
-			<section className="flex flex-col gap-3">
-				<h3 className="font-extrabold">Çalışma düzeni</h3>
-				{goalsSet > 0 && (
-					<p className="rounded-xl bg-accent px-3 py-2 text-sm">
-						Günlük soru hedefi belirlediniz: günlük yük hedeften hesaplanır,
-						aşağıdaki günlük süre kullanılmaz. Hedefleri veli ekranındaki soru
-						hedefi kartından değiştirebilirsiniz.
-					</p>
-				)}
-				<Field label="Günlük süre (dk)">
-					<TextInput
-						inputMode="numeric"
-						value={s.dailyBudgetMinutes}
-						onChange={(e) =>
-							set({
-								dailyBudgetMinutes: Number(e.target.value.replace(/\D/g, "")),
-							})
-						}
-					/>
-				</Field>
-				{budget.level !== "ok" && (
-					<p className="rounded-xl bg-accent px-3 py-2 text-sm">
-						{budget.level === "strong_warn"
-							? "Bu süre 11 yaş için çok yüksek; dinlenme ve oyun zamanını kısabilir."
-							: "Günde 2 saatin üzeri bu yaşta önerilmez."}{" "}
-						Yine de kaydedebilirsiniz.
-					</p>
-				)}
-				<Field
-					label="Blok süresi (dk)"
-					hint="Kesintisiz çalışma. 25–30 dk önerilir."
-				>
-					<TextInput
-						inputMode="numeric"
-						value={s.blockMinutes}
-						onChange={(e) =>
-							set({ blockMinutes: Number(e.target.value.replace(/\D/g, "")) })
-						}
-					/>
-				</Field>
-				{block.level !== "ok" && (
-					<p className="rounded-xl bg-accent px-3 py-2 text-sm">
-						Bu blok süresi önerilen aralığın dışında.
-					</p>
-				)}
-				<div>
-					<p className="mb-1.5 font-bold text-sm">Çalışma günleri</p>
-					<div className="flex flex-wrap gap-2">
-						{DAYS.map((label, i) => {
-							const day = i + 1;
-							const on = s.studyDays.includes(day);
-							return (
-								<Chip
-									key={label}
-									active={on}
-									onClick={() => {
-										const next = on
-											? s.studyDays.filter((d) => d !== day)
-											: [...s.studyDays, day].sort();
-										if (next.length > 0) set({ studyDays: next });
-									}}
-								>
-									{label}
-								</Chip>
-							);
-						})}
-					</div>
-					{s.studyDays.length >= 7 && (
-						<p className="mt-2 text-muted-foreground text-sm">
-							Haftada bir gün dinlenme önerilir.
-						</p>
-					)}
-				</div>
-				<Field label="Boş kalan zaman">
-					<Select
-						value={s.idleTime}
-						onChange={(e) =>
-							set({ idleTime: e.target.value as typeof s.idleTime })
-						}
-					>
-						<option value="review">Tekrar</option>
-						<option value="reading">Kitap okuma</option>
-						<option value="free">Serbest</option>
-					</Select>
-				</Field>
-			</section>
-
-			<section className="flex flex-col gap-3">
-				<h3 className="font-extrabold">Dersler ve okulun temposu</h3>
-				{s.subjects.map((row) => {
-					const info = status.data?.find((x) => x.subject === row.subject);
-					const current =
-						info?.hasCurriculum && info.week
-							? `Şu an: ${info.week.number}. hafta · ${info.week.unitTitles.join(", ")}`
-							: info?.hasCurriculum && info.onBreak
-								? `Tatil: ${info.onBreak}`
-								: "Müfredat verisi yok";
-					return (
-						<div key={row.subject} className="rounded-2xl border p-3">
-							<label className="flex items-center gap-2 font-bold">
-								<input
-									type="checkbox"
-									className="size-5"
-									checked={row.enabled}
-									onChange={(e) =>
-										set({
-											subjects: s.subjects.map((x) =>
-												x.subject === row.subject
-													? { ...x, enabled: e.target.checked }
-													: x,
-											),
-										})
-									}
-								/>
-								{SUBJECTS[row.subject].label}
-							</label>
-							<p className="mt-1 text-muted-foreground text-xs">{current}</p>
-							<div className="mt-2 flex items-center gap-2">
-								<span className="text-sm">Okul bizden</span>
-								<GhostButton
-									aria-label="Bir hafta ileri"
-									onClick={() =>
-										set({
-											subjects: s.subjects.map((x) =>
-												x.subject === row.subject
-													? { ...x, weekOffset: x.weekOffset + 1 }
-													: x,
-											),
-										})
-									}
-								>
-									+
-								</GhostButton>
-								<b className="min-w-16 text-center">
-									{row.weekOffset === 0
-										? "aynı"
-										: row.weekOffset > 0
-											? `${row.weekOffset} hf geride`
-											: `${-row.weekOffset} hf ileride`}
-								</b>
-								<GhostButton
-									aria-label="Bir hafta geri"
-									onClick={() =>
-										set({
-											subjects: s.subjects.map((x) =>
-												x.subject === row.subject
-													? { ...x, weekOffset: x.weekOffset - 1 }
-													: x,
-											),
-										})
-									}
-								>
-									−
-								</GhostButton>
-							</div>
-						</div>
-					);
-				})}
-			</section>
-
-			<section className="flex flex-col gap-2">
-				<h3 className="font-extrabold">Kaynaklar</h3>
-				{(books.data ?? []).map((b) => (
-					<label key={b.id} className="flex items-center gap-2 text-sm">
-						<input
-							type="checkbox"
-							className="size-5"
-							checked={s.sources.includes(b.id)}
-							onChange={(e) =>
-								set({
-									sources: e.target.checked
-										? [...s.sources, b.id]
-										: s.sources.filter((x) => x !== b.id),
-								})
-							}
-						/>
-						<span>
-							{b.title}{" "}
-							<span className="text-muted-foreground">
-								· {SUBJECTS[b.subject].label} · {b.testCount} test
-							</span>
-						</span>
-					</label>
-				))}
-			</section>
-
-			<ErrorText>
-				{update.error ? errorMessage(update.error) : undefined}
-			</ErrorText>
-			{message && (
-				<p role="status" className="font-semibold text-primary text-sm">
-					{message}
-				</p>
-			)}
-			<PrimaryButton
-				disabled={!draft || update.isPending}
-				onClick={() => {
-					if (!draft) return;
-					update.mutate({
-						childId,
-						dailyBudgetMinutes: draft.dailyBudgetMinutes,
-						blockMinutes: draft.blockMinutes,
-						studyDays: draft.studyDays,
-						idleTime: draft.idleTime,
-						subjects: draft.subjects,
-						sources: draft.sources,
-					});
-				}}
-			>
-				Kaydet
-			</PrimaryButton>
-			<GhostButton
-				disabled={rebuild.isPending}
-				onClick={() => rebuild.mutate({ childId })}
-			>
-				Bu haftanın planını yeniden kur
-			</GhostButton>
-			<ErrorText>
-				{rebuild.error ? errorMessage(rebuild.error) : undefined}
-			</ErrorText>
-
-			<section className="flex flex-col gap-3 border-t pt-4">
-				<h3 className="font-extrabold">Hesap</h3>
-				<Field label="Yeni şifre (çocuk için)">
-					<TextInput
-						value={newPassword}
-						onChange={(e) => setNewPassword(e.target.value)}
-						minLength={6}
-					/>
-				</Field>
-				<GhostButton
-					disabled={newPassword.length < 6 || resetPw.isPending}
-					onClick={() => resetPw.mutate({ childId, password: newPassword })}
-				>
-					Şifreyi değiştir
-				</GhostButton>
-				<ErrorText>
-					{resetPw.error ? errorMessage(resetPw.error) : undefined}
-				</ErrorText>
-				<GhostButton
-					className="text-destructive"
-					onClick={() => {
-						if (
-							window.confirm(
-								`${childName} ve tüm verileri kalıcı olarak silinecek. Emin misin?`,
-							)
-						)
-							remove.mutate({ childId, confirm: "SİL" });
-					}}
-				>
-					Çocuğu ve verilerini sil
-				</GhostButton>
-				<GhostButton
-					className="text-destructive"
-					onClick={() => {
-						if (
-							window.confirm(
-								"Hesabın, çocukların ve tüm verileri kalıcı olarak silinecek. Emin misin?",
-							)
-						)
-							deleteAccount.mutate({ confirm: "SİL" });
-					}}
-				>
-					Hesabımı ve tüm verileri sil
-				</GhostButton>
-			</section>
-		</Modal>
-	);
-}
-
-const GOAL_PRESETS = [0, 20, 30, 50, 100] as const;
-
-/** Basit mod: ders başına günlük soru hedefi. 0 = o derste hedef yok. */
-export function QuestionGoalsDialog({
-	childId,
-	onClose,
-}: {
-	childId: string;
-	onClose: () => void;
+	onSaved?: () => void;
 }) {
 	const qc = useQueryClient();
 	const current = useQuery(
@@ -919,53 +587,80 @@ export function QuestionGoalsDialog({
 		orpc.questions.setGoals.mutationOptions({
 			onSuccess: async () => {
 				await qc.invalidateQueries();
-				onClose();
+				setEdits({});
+				onSaved?.();
 			},
 		}),
 	);
 	const value = (s: Subject) =>
 		edits[s] ?? current.data?.subjects.find((x) => x.subject === s)?.goal ?? 0;
+	const setValue = (s: Subject, n: number) =>
+		setEdits({ ...edits, [s]: Math.min(500, Math.max(0, n)) });
 	return (
-		<Modal title="Günlük soru hedefi" onClose={onClose}>
+		<>
 			<p className="text-muted-foreground text-sm">
-				Her ders için günde kaç soru çözülsün? Hedef koymadığın ders çocuğun
-				ekranında görünmez. Çalışma günleri çocuk ayarlarındaki günlerdir.
+				0 bıraktığın ders çocuğun ekranında görünmez. Çalışma günleri çocuk
+				ayarlarındaki günlerdir.
 			</p>
-			{(Object.keys(SUBJECTS) as Subject[]).map((s) => (
-				<div key={s} className="rounded-2xl border p-3">
-					<Field label={SUBJECTS[s].label}>
-						<TextInput
-							type="number"
-							inputMode="numeric"
-							min={0}
-							max={500}
-							value={value(s)}
-							onChange={(e) =>
-								setEdits({
-									...edits,
-									[s]: Math.min(500, Math.max(0, Number(e.target.value) || 0)),
-								})
-							}
-						/>
-					</Field>
-					<div className="mt-2 flex flex-wrap gap-2">
-						{GOAL_PRESETS.map((n) => (
-							<Chip
-								key={n}
-								active={value(s) === n}
-								onClick={() => setEdits({ ...edits, [s]: n })}
+			<ul className="flex flex-col gap-2">
+				{(Object.keys(SUBJECTS) as Subject[]).map((s) => {
+					const meta = SUBJECTS[s];
+					const Icon = meta.icon;
+					const v = value(s);
+					return (
+						<li
+							key={s}
+							className="flex items-center gap-2 rounded-2xl border p-2 pl-3"
+						>
+							<span
+								className={cn(
+									"grid size-9 shrink-0 place-items-center rounded-xl text-white",
+									meta.tile,
+								)}
 							>
-								{n === 0 ? "Yok" : n}
-							</Chip>
-						))}
-					</div>
-				</div>
-			))}
+								<Icon aria-hidden className="size-5" />
+							</span>
+							<span className="min-w-0 flex-1 truncate font-bold text-sm">
+								{meta.label}
+							</span>
+							<button
+								type="button"
+								aria-label={`${meta.label} hedefini azalt`}
+								disabled={v === 0}
+								onClick={() => setValue(s, v - GOAL_STEP)}
+								className="grid size-11 shrink-0 place-items-center rounded-full border font-extrabold text-lg outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40 disabled:opacity-40"
+							>
+								−
+							</button>
+							<input
+								type="number"
+								inputMode="numeric"
+								min={0}
+								max={500}
+								aria-label={`${meta.label} günlük soru hedefi`}
+								value={v}
+								onChange={(e) => setValue(s, Number(e.target.value) || 0)}
+								className="h-11 w-16 shrink-0 rounded-xl border bg-background text-center font-extrabold text-base outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
+							/>
+							<button
+								type="button"
+								aria-label={`${meta.label} hedefini artır`}
+								onClick={() => setValue(s, v + GOAL_STEP)}
+								className="grid size-11 shrink-0 place-items-center rounded-full border font-extrabold text-lg outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+							>
+								+
+							</button>
+						</li>
+					);
+				})}
+			</ul>
 			<ErrorText>
 				{save.isError ? errorMessage(save.error) : undefined}
 			</ErrorText>
 			<PrimaryButton
-				disabled={save.isPending || current.isPending}
+				disabled={
+					save.isPending || current.isPending || Object.keys(edits).length === 0
+				}
 				onClick={() =>
 					save.mutate({
 						childId,
@@ -976,8 +671,22 @@ export function QuestionGoalsDialog({
 					})
 				}
 			>
-				Kaydet
+				Hedefleri kaydet
 			</PrimaryButton>
+		</>
+	);
+}
+
+export function QuestionGoalsDialog({
+	childId,
+	onClose,
+}: {
+	childId: string;
+	onClose: () => void;
+}) {
+	return (
+		<Modal title="Günlük soru hedefi" onClose={onClose}>
+			<QuestionGoalsEditor childId={childId} onSaved={onClose} />
 		</Modal>
 	);
 }

@@ -1,10 +1,5 @@
 import type { ExamResult } from "@ivmeapp/core";
-import {
-	useMutation,
-	useQueries,
-	useQuery,
-	useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -19,7 +14,6 @@ import {
 	HomeworkDialog,
 	QuestionGoalsDialog,
 	RewardsDialog,
-	SettingsDialog,
 } from "./dialogs";
 import { type GuardianActions, GuardianScreen } from "./guardian-screen";
 import type { ChildData, DayStat, HomeworkItem, RewardTier } from "./mock";
@@ -36,8 +30,7 @@ type Dialog =
 	| { kind: "homework"; childId: string }
 	| { kind: "exam"; childId: string }
 	| { kind: "rewards"; childId: string }
-	| { kind: "questions"; childId: string }
-	| { kind: "settings"; childId: string };
+	| { kind: "questions"; childId: string };
 
 export function GuardianApp() {
 	const me = useMe();
@@ -51,22 +44,23 @@ export function GuardianApp() {
 	const enabled = !!id;
 	const input = { childId: id ?? "" };
 
-	const [week, diagnosis, homework, rewards, sub, questions] = useQueries({
-		queries: [
-			{ ...orpc.plan.week.queryOptions({ input }), enabled },
-			{ ...orpc.exam.diagnosis.queryOptions({ input }), enabled },
-			{
-				...orpc.homework.list.queryOptions({
-					input: { childId: id ?? "", includeDone: true },
-				}),
-				enabled,
-			},
-			{ ...orpc.rewards.list.queryOptions({ input }), enabled },
-			{ ...orpc.subscription.status.queryOptions({ input }), enabled },
-			{ ...orpc.questions.overview.queryOptions({ input }), enabled },
-		],
-	});
-	const list = useQuery(orpc.children.list.queryOptions());
+	const [week, diagnosis, homework, rewards, sub, questions, history] =
+		useQueries({
+			queries: [
+				{ ...orpc.plan.week.queryOptions({ input }), enabled },
+				{ ...orpc.exam.diagnosis.queryOptions({ input }), enabled },
+				{
+					...orpc.homework.list.queryOptions({
+						input: { childId: id ?? "", includeDone: true },
+					}),
+					enabled,
+				},
+				{ ...orpc.rewards.list.queryOptions({ input }), enabled },
+				{ ...orpc.subscription.status.queryOptions({ input }), enabled },
+				{ ...orpc.questions.overview.queryOptions({ input }), enabled },
+				{ ...orpc.rewards.history.queryOptions({ input }), enabled },
+			],
+		});
 
 	const refresh = () => qc.invalidateQueries();
 	const startTrial = useMutation(
@@ -116,6 +110,7 @@ export function GuardianApp() {
 					}
 				: undefined,
 			questions: questions.data,
+			rewardHistory: history.data,
 			exam: latest ? (latest as unknown as ExamResult) : null,
 			weakTopics: diagnosis.data?.weakTopics ?? [],
 			homework: (homework.data ?? [])
@@ -150,7 +145,8 @@ export function GuardianApp() {
 
 	const actions: GuardianActions = {
 		onAddChild: () => setDialog({ kind: hasConsent ? "add-child" : "consent" }),
-		onSettings: (childId) => setDialog({ kind: "settings", childId }),
+		onSettings: (childId) =>
+			navigate({ to: "/veli/cocuk/$childId/ayarlar", params: { childId } }),
 		onSignOut: async () => {
 			await authClient.signOut();
 			qc.clear();
@@ -168,8 +164,6 @@ export function GuardianApp() {
 	};
 
 	const close = () => setDialog(null);
-	const active = children.find((c) => c.id === id);
-	const username = list.data?.find((c) => c.id === id)?.username ?? null;
 
 	return (
 		<>
@@ -193,7 +187,11 @@ export function GuardianApp() {
 					onClose={close}
 					onCreated={(childId) => {
 						setActiveId(childId);
-						setDialog({ kind: "settings", childId });
+						setDialog(null);
+						navigate({
+							to: "/veli/cocuk/$childId/ayarlar",
+							params: { childId },
+						});
 					}}
 				/>
 			)}
@@ -208,23 +206,6 @@ export function GuardianApp() {
 			)}
 			{dialog?.kind === "rewards" && (
 				<RewardsDialog childId={dialog.childId} onClose={close} />
-			)}
-			{dialog?.kind === "settings" && (
-				<SettingsDialog
-					childId={dialog.childId}
-					childName={active?.displayName ?? ""}
-					username={username}
-					onClose={close}
-					onChildRemoved={() => {
-						setActiveId(undefined);
-						close();
-					}}
-					onAccountDeleted={async () => {
-						await authClient.signOut();
-						qc.clear();
-						navigate({ to: "/giris", search: { next: undefined } });
-					}}
-				/>
 			)}
 		</>
 	);

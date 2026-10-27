@@ -66,8 +66,9 @@ export function GuardianScreen({
 				actions={actions}
 			/>
 			<main className="mx-auto w-full max-w-md px-4 pt-4 pb-20 sm:max-w-xl md:max-w-4xl md:pt-6 lg:max-w-5xl">
+				{child && <RewardBanner child={child} actions={actions} />}
 				{child ? (
-					<div className="grid gap-4 md:grid-cols-2 md:items-start md:gap-5">
+					<div className="mt-4 grid gap-4 md:grid-cols-2 md:items-start md:gap-5">
 						<div className="flex flex-col gap-4 md:gap-5">
 							<QuestionsCard
 								key={`q-${child.id}`}
@@ -83,6 +84,7 @@ export function GuardianScreen({
 								key={`r-${child.id}`}
 								childId={child.id}
 								rewards={child.rewards}
+								history={child.rewardHistory}
 								actions={actions}
 							/>
 						</div>
@@ -485,10 +487,12 @@ const TIERS = {
 function RewardsCard({
 	childId,
 	rewards,
+	history = [],
 	actions,
 }: {
 	childId: string;
 	rewards: RewardTier[];
+	history?: NonNullable<ChildData["rewardHistory"]>;
 	actions: GuardianActions;
 }) {
 	const [given, setGiven] = useState<ReadonlySet<string>>(
@@ -579,6 +583,31 @@ function RewardsCard({
 					);
 				})}
 			</ul>
+			{history.length > 0 && (
+				<details className="mt-3 rounded-2xl border px-3 py-2">
+					<summary className="min-h-9 cursor-pointer font-bold text-sm">
+						Verilen ödüller ({history.length})
+					</summary>
+					<ul className="mt-2 flex flex-col gap-1.5 text-sm">
+						{history.map((h) => (
+							<li
+								key={`${h.tier}-${h.grantedAt.toString()}`}
+								className="flex items-center justify-between gap-3"
+							>
+								<span className="min-w-0 truncate">
+									<b>{h.title}</b>{" "}
+									<span className="text-muted-foreground">
+										· {TIERS[h.tier].label}
+									</span>
+								</span>
+								<span className="shrink-0 text-muted-foreground text-xs">
+									{dateFmt.format(new Date(h.grantedAt))}
+								</span>
+							</li>
+						))}
+					</ul>
+				</details>
+			)}
 			<button
 				type="button"
 				onClick={() => actions.onEditRewards?.(childId)}
@@ -725,5 +754,52 @@ function QuestionsCard({
 			</ul>
 			{edit}
 		</Card>
+	);
+}
+
+/**
+ * ADR-0016 madde 4: hedefe ulaşılınca veliye haber: ödülü teslim etmek velinin işi. Henüz e-posta ya
+ * da WhatsApp bildirimi yok; veli panelini açtığında en üstte görünür.
+ */
+function RewardBanner({
+	child,
+	actions,
+}: {
+	child: ChildData;
+	actions: GuardianActions;
+}) {
+	const due = child.rewards.filter((r) => {
+		const p =
+			r.progress ??
+			rewardProgress({
+				completed: r.completed,
+				total: r.total,
+				threshold: r.threshold,
+			});
+		return p.unlocked && !r.given;
+	});
+	if (due.length === 0) return null;
+	return (
+		<section
+			aria-label="Teslim edilecek ödüller"
+			className="flex flex-col gap-2 rounded-3xl bg-gradient-to-br from-ivme-orange to-ivme-orange-deep p-4 text-white shadow-ivme-orange/30 shadow-lg"
+		>
+			{due.map((r) => (
+				<div key={r.tier} className="flex items-center gap-3">
+					<Trophy aria-hidden className="size-7 shrink-0" />
+					<p className="min-w-0 flex-1 font-extrabold leading-snug">
+						{child.name}, {TIERS[r.tier].label.toLowerCase()} hedefine ulaştı:{" "}
+						{r.title}
+					</p>
+					<button
+						type="button"
+						onClick={() => actions.onGrant?.(child.id, r.tier, true)}
+						className="min-h-11 shrink-0 rounded-full bg-white px-4 font-extrabold text-ivme-orange-deep text-sm outline-none focus-visible:ring-4 focus-visible:ring-white/50"
+					>
+						Verdim
+					</button>
+				</div>
+			))}
+		</section>
 	);
 }
