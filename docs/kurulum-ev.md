@@ -1,6 +1,6 @@
 # Evde kurulum (macOS + Cloudflare Tunnel)
 
-Bu belge, İvme'yi evdeki bir Mac'e kurmak içindir. Mac'te Claude Code'a şunu söyleyebilirsin:
+Bu belge, İvme'yi evdeki bir Mac'e kurmak içindir. Linux için: `docs/kurulum-linux.md`. Mac'te Claude Code'a şunu söyleyebilirsin:
 **"docs/kurulum-ev.md dosyasındaki adımları sırayla uygula; her adımdan sonra çalıştığını doğrula."**
 
 Mimari: tek süreç hem API'yi hem derlenmiş web arayüzünü sunar (`localhost:3000`). Cloudflare
@@ -21,7 +21,7 @@ brew services start postgresql@16
 ## 2. Kodu al
 ```bash
 git clone <repo-adresi> ~/ivmeapp && cd ~/ivmeapp
-git checkout claude/beautiful-cray-kvub7b     # ya da main, birleştirildiyse
+git checkout claude/keen-clarke-sgusrp     # ya da main, birleştirildiyse
 pnpm install
 ```
 
