@@ -52,6 +52,18 @@ export function createAuth(
 		hooks: {
 			// Kamuya açık kayıtta yalnızca veli ya da öğretmen olunabilir (ADR-0012).
 			before: createAuthMiddleware(async (ctx) => {
+				// Rol ve kullanıcı adı oturum açıldıktan sonra istemciden değiştirilemez.
+				if (ctx.path === "/update-user") {
+					const patch = ctx.body as
+						| { role?: unknown; username?: unknown }
+						| undefined;
+					if (patch?.role !== undefined || patch?.username !== undefined) {
+						throw new APIError("BAD_REQUEST", {
+							message: "Bu alan değiştirilemez",
+						});
+					}
+					return;
+				}
 				if (ctx.path !== "/sign-up/email") return;
 				const body = ctx.body as
 					| { role?: unknown; username?: unknown }

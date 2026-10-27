@@ -75,6 +75,46 @@ describe("kamuya açık kayıt", () => {
 		}
 	});
 
+	it("oturum açık kullanıcı update-user ile rolünü ya da kullanıcı adını değiştiremez", async () => {
+		const addr = email();
+		const signUp = await auth.handler(
+			new Request("http://localhost:3000/api/auth/sign-up/email", {
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					origin: "http://localhost:3001",
+				},
+				body: JSON.stringify({
+					email: addr,
+					password: "Sifre12345",
+					name: "V",
+				}),
+			}),
+		);
+		const cookie = signUp.headers
+			.getSetCookie()
+			.map((c) => c.split(";")[0])
+			.join("; ");
+		const update = (body: object) =>
+			auth.handler(
+				new Request("http://localhost:3000/api/auth/update-user", {
+					method: "POST",
+					headers: {
+						"content-type": "application/json",
+						origin: "http://localhost:3001",
+						cookie,
+					},
+					body: JSON.stringify(body),
+				}),
+			);
+		expect((await update({ role: "admin" })).status).toBe(400);
+		expect((await update({ username: "hileci" })).status).toBe(400);
+		const [row] = await t.db.select().from(user).where(eq(user.email, addr));
+		expect(row?.role).toBe("guardian");
+		// Diğer alanlar (ad) hâlâ güncellenebilir.
+		expect((await update({ name: "Yeni Ad" })).status).toBe(200);
+	});
+
 	it("kamuya açık kayıtta kullanıcı adı verilemez", async () => {
 		await expect(
 			auth.api.signUpEmail({
