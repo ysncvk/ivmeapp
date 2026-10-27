@@ -170,6 +170,9 @@ export function errorMessage(error: unknown): string {
 		trial_already_used: "Deneme bu çocuk için daha önce kullanıldı.",
 		has_progress: "Bu haftada işaretlenmiş görev var, plan yeniden kurulamaz.",
 		no_capacity: "Hedef günde yer yok.",
+		task_done: "Tamamlanan görev başka güne taşınamaz.",
+		not_study_day: "O gün çalışma günü değil.",
+		same_day: "Görev zaten o günde.",
 		not_unlocked: "Hedefe henüz ulaşılmadı.",
 		plan_locked: "Bu özellik için Bireysel Koçluk gerekir.",
 	};

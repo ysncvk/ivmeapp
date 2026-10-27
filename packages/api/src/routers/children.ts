@@ -13,13 +13,14 @@ import {
 } from "@ivmeapp/core";
 import { session, user } from "@ivmeapp/db/schema/auth";
 import {
+	accessLog,
 	child,
 	childSource,
 	childSubject,
 	consent,
 } from "@ivmeapp/db/schema/domain";
 import { ORPCError } from "@orpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { resolveGuardianChild } from "../authz";
@@ -254,6 +255,29 @@ export const childrenRouter = {
 			const c = await resolveGuardianChild(context, input.childId);
 			await context.db.delete(session).where(eq(session.userId, c.userId));
 			return { ok: true };
+		}),
+
+	/**
+	 * Erişim şeffaflığı (ADR-0010): çocuğun verisine kimlerin baktığı. Veli kendi çocuğunun kaydını görür;
+	 * kendi (ve çocuğun) erişimleri kaydedilmez (K-013), bu yüzden liste yalnızca öğretmen/yönetici
+	 * erişimlerini içerir.
+	 */
+	accessLog: guardianProcedure
+		.input(z.object({ childId: z.string() }))
+		.handler(async ({ context, input }) => {
+			const c = await resolveGuardianChild(context, input.childId);
+			return context.db
+				.select({
+					action: accessLog.action,
+					actorRole: accessLog.actorRole,
+					actorName: user.name,
+					createdAt: accessLog.createdAt,
+				})
+				.from(accessLog)
+				.leftJoin(user, eq(user.id, accessLog.actorUserId))
+				.where(eq(accessLog.childId, c.id))
+				.orderBy(desc(accessLog.createdAt))
+				.limit(30);
 		}),
 
 	remove: guardianProcedure

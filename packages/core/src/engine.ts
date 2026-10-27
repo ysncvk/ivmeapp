@@ -586,7 +586,9 @@ export function moveTask(
 		Math.floor(settings.dailyBudgetMinutes / settings.blockMinutes),
 	);
 	let displaced: PlanTask | undefined;
-	if (to.tasks.length >= slotsPerDay) {
+	// Soru hedefi kipinde gün zaten hedef kadar dolu olur; taşıma çocuğun açık tercihidir ("bugün
+	// yapamadım, perşembe yaparım"), kapasiteyle reddedilmez. Sayaç gerçekte çözülen soruyu izler.
+	if (!settings.dailyTests && to.tasks.length >= slotsPerDay) {
 		const victims = to.tasks.filter(
 			(t) =>
 				t.reason.source === "spaced_review" || t.reason.source === "weak_topic",

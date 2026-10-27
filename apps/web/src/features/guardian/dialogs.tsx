@@ -28,11 +28,8 @@ export function ConsentDialog({
 	onAccepted: () => void;
 }) {
 	const [checked, setChecked] = useState(false);
-	const mutation = useMutation(
-		orpc.account.acceptConsent.mutationOptions({
-			onSuccess: onAccepted,
-		}),
-	);
+	const [marketing, setMarketing] = useState(false);
+	const mutation = useMutation(orpc.account.acceptConsent.mutationOptions());
 	const accept = async () => {
 		await mutation.mutateAsync({
 			kind: "privacy_notice",
@@ -42,6 +39,14 @@ export function ConsentDialog({
 			kind: "parental_consent",
 			version: CONSENT_VERSION,
 		});
+		// ADR-0014 madde 8: pazarlama onayı ayrı ve isteğe bağlıdır, işaretlenmeden gönderilmez
+		if (marketing) {
+			await mutation.mutateAsync({
+				kind: "marketing",
+				version: CONSENT_VERSION,
+			});
+		}
+		onAccepted();
 	};
 	return (
 		<Modal title="Açık rıza ve aydınlatma" onClose={onClose}>
@@ -65,6 +70,19 @@ export function ConsentDialog({
 				<span>
 					Veli olarak çocuğum adına bu verilerin işlenmesine açık rıza
 					veriyorum.
+				</span>
+			</label>
+			<label className="flex items-start gap-3 text-sm">
+				<input
+					type="checkbox"
+					checked={marketing}
+					onChange={(e) => setMarketing(e.target.checked)}
+					className="mt-1 size-5"
+				/>
+				<span>
+					<span className="text-muted-foreground">(İsteğe bağlı)</span> İvme'den
+					haber ve kampanya iletileri almak istiyorum. Bu onay üyeliğin ya da
+					hizmetin şartı değildir, istediğin an geri alabilirsin.
 				</span>
 			</label>
 			<ErrorText>

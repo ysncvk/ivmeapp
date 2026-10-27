@@ -70,6 +70,9 @@ export function GuardianApp() {
 	const toggleHw = useMutation(
 		orpc.homework.toggle.mutationOptions({ onSuccess: refresh }),
 	);
+	const removeHw = useMutation(
+		orpc.homework.remove.mutationOptions({ onSuccess: refresh }),
+	);
 	const grant = useMutation(
 		orpc.rewards.grant.mutationOptions({ onSuccess: refresh }),
 	);
@@ -101,6 +104,7 @@ export function GuardianApp() {
 						done: days.reduce((n, d) => n + d.done, 0),
 						total: days.reduce((n, d) => n + d.total, 0),
 						days,
+						warnings: week.data.plan.coverage.warnings,
 					}
 				: null,
 			subscription: sub.data
@@ -157,6 +161,8 @@ export function GuardianApp() {
 		onAddHomework: (childId) => setDialog({ kind: "homework", childId }),
 		onToggleHomework: (childId, homeworkId, done) =>
 			toggleHw.mutate({ childId, homeworkId, done }),
+		onRemoveHomework: (childId, homeworkId) =>
+			removeHw.mutate({ childId, homeworkId }),
 		onAddExam: (childId) => setDialog({ kind: "exam", childId }),
 		onEditRewards: (childId) => setDialog({ kind: "rewards", childId }),
 		onEditQuestions: (childId) => setDialog({ kind: "questions", childId }),

@@ -1,6 +1,6 @@
 import { addDays, type Subject, weekLabel } from "@ivmeapp/core";
 import { cn } from "@ivmeapp/ui/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Copy, Lock, Share2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
@@ -46,6 +46,12 @@ export function ReportsView({ childId }: { childId: string }) {
 		orpc.exam.diagnosis.queryOptions({ input: { childId } }),
 	);
 	const thisWeek = history.data?.weeks.at(-1)?.weekStart;
+	const qc = useQueryClient();
+	const removeExam = useMutation(
+		orpc.exam.remove.mutationOptions({
+			onSuccess: () => qc.invalidateQueries(),
+		}),
+	);
 
 	return (
 		<div className="mt-4 flex flex-col gap-4 md:gap-5">
@@ -62,7 +68,10 @@ export function ReportsView({ childId }: { childId: string }) {
 			/>
 			<div className="grid gap-4 md:grid-cols-2 md:items-start md:gap-5">
 				<TrendCard weeks={history.data?.weeks} />
-				<ExamTrendCard exams={history.data?.exams} />
+				<ExamTrendCard
+					exams={history.data?.exams}
+					onDelete={(examId) => removeExam.mutate({ childId, examId })}
+				/>
 			</div>
 			<WeakTopicsCard
 				topics={(diagnosis.data?.weakTopics ?? []).map((w) => ({
@@ -311,7 +320,9 @@ function TrendCard({
 
 function ExamTrendCard({
 	exams,
+	onDelete,
 }: {
+	onDelete?: (examId: string) => void;
 	exams?: {
 		id: string;
 		name: string;
@@ -378,6 +389,37 @@ function ExamTrendCard({
 							))}
 						</svg>
 					</figure>
+					<details className="mt-3 rounded-2xl border px-3 py-2">
+						<summary className="min-h-9 cursor-pointer font-bold text-sm">
+							Girilen denemeler ({list.length})
+						</summary>
+						<ul className="mt-2 flex flex-col gap-1.5 text-sm">
+							{[...list].reverse().map((e) => (
+								<li
+									key={e.id}
+									className="flex items-center justify-between gap-2"
+								>
+									<span className="min-w-0 truncate">
+										<b>{e.name}</b>{" "}
+										<span className="text-muted-foreground">
+											· {shortDate.format(new Date(e.date))} · {e.netTotal} net
+										</span>
+									</span>
+									<button
+										type="button"
+										aria-label={`${e.name} denemesini sil`}
+										onClick={() => {
+											if (window.confirm(`"${e.name}" denemesi silinsin mi?`))
+												onDelete?.(e.id);
+										}}
+										className="min-h-9 shrink-0 rounded-full px-3 font-bold text-destructive text-xs outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+									>
+										Sil
+									</button>
+								</li>
+							))}
+						</ul>
+					</details>
 					{last && (
 						<ul className="mt-2 flex flex-col gap-1 text-sm">
 							{last.subjects.map((s) => (

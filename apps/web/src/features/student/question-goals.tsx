@@ -26,6 +26,9 @@ interface Props {
 	tasks?: QuestionTask[];
 	onChange: (subject: Subject, solved: number) => void;
 	onToggleTask?: (id: string, done: boolean) => void;
+	/** ADR-0013 madde 6: görevi haftanın başka bir (çalışma) gününe taşıma. */
+	moveDays?: { day: number; label: string }[];
+	onMoveTask?: (id: string, toDay: number) => void;
 }
 
 const STEPS = [-5, 5, 10] as const;
@@ -36,6 +39,8 @@ export function QuestionGoals({
 	tasks = [],
 	onChange,
 	onToggleTask,
+	moveDays = [],
+	onMoveTask,
 }: Props) {
 	if (goals.length === 0) return null;
 	return (
@@ -48,6 +53,8 @@ export function QuestionGoals({
 					tasks={tasks.filter((t) => t.subject === g.subject)}
 					onChange={onChange}
 					onToggleTask={onToggleTask}
+					moveDays={moveDays}
+					onMoveTask={onMoveTask}
 				/>
 			))}
 		</section>
@@ -59,11 +66,15 @@ function GoalCard({
 	tasks,
 	onChange,
 	onToggleTask,
+	moveDays,
+	onMoveTask,
 }: {
 	goal: QuestionGoal;
 	tasks: QuestionTask[];
 	onChange: Props["onChange"];
 	onToggleTask?: Props["onToggleTask"];
+	moveDays: NonNullable<Props["moveDays"]>;
+	onMoveTask?: Props["onMoveTask"];
 }) {
 	const meta = SUBJECTS[goal.subject];
 	const Icon = meta.icon;
@@ -154,8 +165,8 @@ function GoalCard({
 					className="mt-3 flex flex-col gap-2 border-t pt-3"
 				>
 					{tasks.map((t) => (
-						<li key={t.id}>
-							<label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl px-1 has-[input:focus-visible]:ring-4 has-[input:focus-visible]:ring-ring/40">
+						<li key={t.id} className="flex items-center gap-2">
+							<label className="flex min-h-12 min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-2xl px-1 has-[input:focus-visible]:ring-4 has-[input:focus-visible]:ring-ring/40">
 								<input
 									type="checkbox"
 									checked={t.done}
@@ -186,6 +197,24 @@ function GoalCard({
 									</span>
 								</span>
 							</label>
+							{onMoveTask && moveDays.length > 0 && !t.done && (
+								<select
+									aria-label={`${t.work} başka güne taşı`}
+									value=""
+									onChange={(e) => {
+										if (e.target.value)
+											onMoveTask(t.id, Number(e.target.value));
+									}}
+									className="min-h-11 shrink-0 rounded-full border bg-background px-3 font-bold text-muted-foreground text-xs outline-none focus-visible:ring-4 focus-visible:ring-ring/40"
+								>
+									<option value="">Taşı</option>
+									{moveDays.map((d) => (
+										<option key={d.day} value={d.day}>
+											{d.label}
+										</option>
+									))}
+								</select>
+							)}
 						</li>
 					))}
 				</ul>

@@ -73,7 +73,10 @@ export const accountRouter = {
 		};
 	}),
 
-	/** Aydınlatma metni ve açık rıza kaydı (ADR-0010 madde 4). */
+	/**
+	 * Aydınlatma metni ve açık rıza kaydı (ADR-0010 madde 4). Çocuk yalnızca kendi sade aydınlatma
+	 * onayını (`child_notice`, ADR-0012) verebilir; açık rıza velinindir. Aynı sürüm tekrar kaydedilmez.
+	 */
 	acceptConsent: protectedProcedure
 		.input(
 			z.object({
@@ -83,17 +86,49 @@ export const accountRouter = {
 		)
 		.handler(async ({ context, input }) => {
 			const role = context.session.user.role as string;
-			if (role === "student" || role === "admin")
+			if (role === "admin") throw new ORPCError("FORBIDDEN");
+			if (role === "student" && input.kind !== "child_notice")
+				throw new ORPCError("FORBIDDEN");
+			if (input.kind === "child_notice" && role !== "student")
 				throw new ORPCError("FORBIDDEN");
 			if (input.kind === "parental_consent" && role !== "guardian")
 				throw new ORPCError("FORBIDDEN");
-			await context.db.insert(consent).values({
-				userId: context.session.user.id,
-				kind: input.kind,
-				version: input.version,
-			});
+			const userId = context.session.user.id;
+			const [active] = await context.db
+				.select({ id: consent.id })
+				.from(consent)
+				.where(
+					and(
+						eq(consent.userId, userId),
+						eq(consent.kind, input.kind),
+						eq(consent.version, input.version),
+						isNull(consent.revokedAt),
+					),
+				);
+			if (!active) {
+				await context.db.insert(consent).values({
+					userId,
+					kind: input.kind,
+					version: input.version,
+				});
+			}
 			return { ok: true };
 		}),
+
+	/** Pazarlama onayı geri alınabilir (ADR-0014 madde 8); hizmet için gerekli rızalar buradan çekilmez. */
+	revokeMarketing: protectedProcedure.handler(async ({ context }) => {
+		await context.db
+			.update(consent)
+			.set({ revokedAt: clock(context) })
+			.where(
+				and(
+					eq(consent.userId, context.session.user.id),
+					eq(consent.kind, "marketing"),
+					isNull(consent.revokedAt),
+				),
+			);
+		return { ok: true };
+	}),
 
 	/** Silme hakkı (ADR-0010 madde 3): veli hesabı silince çocuğa ait tüm veri silinir. */
 	deleteAccount: protectedProcedure

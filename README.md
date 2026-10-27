@@ -1,8 +1,9 @@
 # İvme
 
-6. sınıf öğrencileri için günlük/haftalık çalışma planı ve ödev takibi (PWA). Veli seçtiği kaynaklarla
-ve MEB yıllık planıyla plan üretir; öğretmen çalışma grubuna ödev verir; öğrenci günün görevlerini
-işaretler. Kararlar `docs/adr/` altındaki ADR'lerde, otonom alınan ayrıntı kararlar
+6. sınıf öğrencileri için günlük soru hedefi, çalışma planı ve ödev takibi (PWA). Veli ders başına günlük
+soru hedefi koyar (ücretsiz); ücretli koçluk bu hedefi seçilen kitaplardan "bugün şu testleri çöz"
+önerisine çevirir. Öğretmen çalışma grubuna ödev verir; öğrenci günün sorularını ve testlerini işaretler;
+veli haftalık özet, gidişat ve deneme raporlarını görür. Kararlar `docs/adr/` altındaki ADR'lerde, otonom alınan ayrıntı kararlar
 `docs/karar-gunlugu.md` içinde, eksik veri ve açık sorular `docs/eksikler.md` içindedir.
 
 ## Yapı
@@ -45,9 +46,11 @@ pnpm test
 
 CI (`.github/workflows/ci.yml`) aynı üç kapıyı Postgres servis konteyneriyle çalıştırır.
 
-## Evde/sunucuda kurulum
+## Kurulum
 
-macOS + Cloudflare Tunnel için adım adım: `docs/kurulum-ev.md`.
+- Evde Linux (systemd + Cloudflare Tunnel): `docs/kurulum-linux.md`
+- Evde macOS (launchd + Cloudflare Tunnel): `docs/kurulum-ev.md`
+- Bulutta deneme (Render + Neon, ücretsiz katman, yalnızca sahte veri): `docs/kurulum-bulut.md`
 
 ## Ortam değişkenleri
 

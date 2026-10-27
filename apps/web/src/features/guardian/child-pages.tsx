@@ -24,6 +24,13 @@ import { authClient } from "@/lib/auth-client";
 import { useMe } from "@/lib/me";
 import { orpc } from "@/utils/orpc";
 import { SUBJECTS } from "../student/subjects";
+import {
+	AccessLogSection,
+	BookRequestSection,
+	GroupsSection,
+	NotificationSection,
+	SubscriptionSection,
+} from "./child-sections";
 import { QuestionGoalsEditor } from "./dialogs";
 
 const DAYS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
@@ -495,6 +502,31 @@ export function ChildSettingsPage({ childId }: { childId: string }) {
 				</GhostButton>
 			</Section>
 
+			<Section
+				title="Bireysel Koçluk"
+				hint="Gün gün test planı ve konu haritası. Soru hedefi ve ödev takibi ücretsizdir."
+			>
+				<SubscriptionSection childId={childId} />
+			</Section>
+
+			<Section
+				title="Çalışma grupları"
+				hint="Öğretmenin davetiyle katıldığı gruplar"
+			>
+				<GroupsSection childId={childId} />
+			</Section>
+
+			<Section
+				title="Verilere kimler baktı?"
+				hint="Öğretmen ya da yönetici erişimleri kaydedilir"
+			>
+				<AccessLogSection childId={childId} />
+			</Section>
+
+			<Section title="Bildirim tercihi">
+				<NotificationSection />
+			</Section>
+
 			<Section title="Silme işlemleri" className="border-destructive/30">
 				<GhostButton
 					className="text-destructive"
@@ -670,6 +702,9 @@ export function ChildSourcesPage({ childId }: { childId: string }) {
 					</Section>
 				);
 			})}
+			<Section title="Kaynak ekletmek ister misiniz?">
+				<BookRequestSection />
+			</Section>
 			<Section title="Plan">
 				<p
 					role="status"

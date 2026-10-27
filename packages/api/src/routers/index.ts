@@ -6,7 +6,7 @@ import { childrenRouter } from "./children";
 import { examRouter } from "./exam";
 import { groupsRouter, teacherRouter } from "./groups";
 import { homeworkRouter } from "./homework";
-import { libraryRouter, topicMapRouter } from "./library";
+import { bookRequestRouter, libraryRouter, topicMapRouter } from "./library";
 import { planRouter } from "./plan";
 import { questionsRouter } from "./questions";
 import { reportRouter } from "./report";
@@ -28,7 +28,7 @@ export const appRouter = {
 	subscription: subscriptionRouter,
 	teacher: teacherRouter,
 	groups: groupsRouter,
-	library: { ...libraryRouter, ...topicMapRouter },
+	library: { ...libraryRouter, ...topicMapRouter, ...bookRequestRouter },
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;

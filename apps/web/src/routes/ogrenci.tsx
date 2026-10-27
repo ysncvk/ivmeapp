@@ -1,12 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
+import { toast } from "sonner";
+
+import { errorMessage } from "@/components/kit";
 import Loader from "@/components/loader";
+import { CONSENT_VERSION } from "@/features/guardian/dialogs";
+import { ChildNotice } from "@/features/student/child-notice";
 import { QuestionGoals } from "@/features/student/question-goals";
 import { TodayScreen } from "@/features/student/today-screen";
 import { authClient } from "@/lib/auth-client";
-import { requireRole } from "@/lib/me";
+import { requireRole, useMe } from "@/lib/me";
 import { orpc } from "@/utils/orpc";
+
+const WEEKDAY_LABEL = [
+	"Pazartesi",
+	"Salı",
+	"Çarşamba",
+	"Perşembe",
+	"Cuma",
+	"Cumartesi",
+	"Pazar",
+];
 
 export const Route = createFileRoute("/ogrenci")({
 	beforeLoad: () => requireRole("student"),
@@ -16,6 +31,12 @@ export const Route = createFileRoute("/ogrenci")({
 function StudentPage() {
 	const navigate = useNavigate();
 	const qc = useQueryClient();
+	const me = useMe();
+	const accept = useMutation(
+		orpc.account.acceptConsent.mutationOptions({
+			onSuccess: () => qc.invalidateQueries({ queryKey: orpc.account.key() }),
+		}),
+	);
 	const today = useQuery(orpc.plan.today.queryOptions({ input: {} }));
 	const questions = useQuery(
 		orpc.questions.overview.queryOptions({ input: {} }),
@@ -48,11 +69,29 @@ function StudentPage() {
 	const toggleTask = useMutation(
 		orpc.plan.toggleTask.mutationOptions({ onSuccess: refresh }),
 	);
+	const moveTask = useMutation(
+		orpc.plan.moveTask.mutationOptions({
+			onSuccess: refresh,
+			onError: (e) => toast.error(errorMessage(e)),
+		}),
+	);
 	const toggleHw = useMutation(
 		orpc.homework.toggle.mutationOptions({ onSuccess: refresh }),
 	);
 
-	if (!today.data) return <Loader />;
+	if (!today.data || !me.data) return <Loader />;
+	// ADR-0012: ilk girişte çocuğa sade aydınlatma
+	if (!me.data.consents.some((c) => c.kind === "child_notice")) {
+		return (
+			<ChildNotice
+				name={me.data.user.name}
+				pending={accept.isPending}
+				onAccept={() =>
+					accept.mutate({ kind: "child_notice", version: CONSENT_VERSION })
+				}
+			/>
+		);
+	}
 	const d = today.data;
 	// Çocuğa en yakın ödül: günlük > haftalık > büyük
 	const r =
@@ -73,6 +112,13 @@ function StudentPage() {
 						goals={questions.data.subjects}
 						tasks={d.tasks.filter((t) => t.reason.source !== "homework")}
 						onToggleTask={(taskId, done) => toggleTask.mutate({ taskId, done })}
+						onMoveTask={(taskId, toDay) => moveTask.mutate({ taskId, toDay })}
+						moveDays={(questions.data?.days ?? [])
+							.filter((x) => x.studyDay && x.day > d.weekday)
+							.map((x) => ({
+								day: x.day,
+								label: WEEKDAY_LABEL[x.day - 1] ?? "",
+							}))}
 						onChange={(subject, solved) =>
 							logQuestions.mutate({ subject, solved })
 						}

@@ -28,8 +28,27 @@ doğrulama `docs/hukuk-sorulari.md` üzerinden yapılır.
 
 ## Teknik
 - Öğrenci/veli ekranlarında çevrimdışı kullanım (PWA önbelleği yalnızca kabuk).
-- Erişilebilirlik ve gerçek cihaz testi (iOS Safari PWA) yapılmadı.
-- Web için otomatik uçtan uca test yok; akış elle Playwright ile doğrulandı.
+- Erişilebilirlik ve **gerçek cihaz testi** (iOS Safari PWA, Android Chrome) yapılmadı; ekranlar telefon
+  boyutunu taklit eden bir tarayıcıda 320-390 px genişlikte denendi, yatay taşma yok.
+- Web için otomatik uçtan uca test yok; akışlar elle Playwright betikleriyle doğrulandı.
+- Oran sınırı bellek içi (K-017); ücretsiz bulut denemesinde (Render) servis uyuyunca sıfırlanır.
+- Worker (Pazar akşamı plan üretimi, saklama temizliği) ücretsiz bulut denemesinde çalışmaz; planlar ilk
+  açılışta kurulur.
+
+## ADR'lerde olup yapılmayanlar
+- **Admin ekranı** (kütüphane besleme, yıllık plan, kullanıcı yönetimi; ADR-0004/0008): yok. İçerik kodda
+  (K-008), güncelleme dağıtım gerektirir.
+- **İkincil veli** (anne ve baba aynı çocuğu görsün): karar açık (ADR-0012).
+- **Veliye haftalık özet bildirimi** (e-posta/WhatsApp, ADR-0009): sağlayıcı yok. Özet uygulamada
+  görünür ve düz metin olarak paylaşılır/kopyalanır.
+- **Yapay zekâ yorumu ve Okulizyon toplayıcısı** (ADR-0015): bilinçli olarak v2.
+- **Proje ödevini parçalara bölüp haftalara yaymak** (ADR-0013 madde 11): v1'de yalnızca teslim tarihli ödev.
+- **Kitap okuma günde 30 dk, bütçe dışı** (ADR-0009 madde 6): ayrı bir öğe olarak gösterilmiyor; "boş kalan
+  zaman: kitap okuma" tercihi var.
+- **Ücretli katman fiyatı ve ödeme sağlayıcısı** (ADR-0014): açık.
+- **İçerik:** 5-12. sınıflar, 6. sınıf Sosyal Bilgiler ve İngilizce kitap/yıllık plan. Resmî öğretim programları
+  `mufredat.meb.gov.tr` üzerinden alınabiliyor (ünite ve ders saati); haftalık yıllık plan ve ders kitabı
+  içindekileri ayrıca bulunmalı.
 
 ## Fikir havuzu (v2+, kapsam dışı)
 - **Test mağazası:** yayınevlerinden parça parça test satın alma, uygulamada online çözme, komisyon

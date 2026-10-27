@@ -6,8 +6,9 @@ import {
 	type Subject,
 	weekFor,
 } from "@ivmeapp/core";
-import { childSubject } from "@ivmeapp/db/schema/domain";
-import { eq } from "drizzle-orm";
+import { bookRequest, childSubject } from "@ivmeapp/db/schema/domain";
+import { ORPCError } from "@orpc/server";
+import { count, eq } from "drizzle-orm";
 import { z } from "zod";
 import {
 	resolveFamilyChild,
@@ -125,5 +126,34 @@ export const topicMapRouter = {
 				return { weekStart, subjects };
 			});
 			return { locked: false as const, weeks };
+		}),
+};
+
+/** "Kaynak eklenmesini iste" (ADR-0004): talebe göre kütüphane büyür. Kullanıcı başına sınırlıdır. */
+export const bookRequestRouter = {
+	requestBook: guardianProcedure
+		.input(
+			z.object({
+				title: z.string().trim().min(2).max(120),
+				subject: z.enum(SUBJECTS).optional(),
+				note: z.string().trim().max(300).optional(),
+			}),
+		)
+		.handler(async ({ context, input }) => {
+			const userId = context.session.user.id;
+			const [row] = await context.db
+				.select({ n: count() })
+				.from(bookRequest)
+				.where(eq(bookRequest.userId, userId));
+			if ((row?.n ?? 0) >= 20) {
+				throw new ORPCError("BAD_REQUEST", { message: "too_many_requests" });
+			}
+			await context.db.insert(bookRequest).values({
+				userId,
+				title: input.title,
+				subject: input.subject ?? null,
+				note: input.note || null,
+			});
+			return { ok: true };
 		}),
 };

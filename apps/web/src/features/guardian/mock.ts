@@ -1,4 +1,9 @@
-import type { ExamResult, rewardProgress, Subject } from "@ivmeapp/core";
+import type {
+	CoverageWarning,
+	ExamResult,
+	rewardProgress,
+	Subject,
+} from "@ivmeapp/core";
 
 /** Tasarım önizlemesi için örnek veri. Deneme için `core`'un ExamResult tipini kullanır. */
 
@@ -59,7 +64,12 @@ export interface ChildData {
 	id: string;
 	name: string;
 	/** null: ücretli plan yok, haftalık görev sayısı gösterilmez. */
-	week: { done: number; total: number; days: DayStat[] } | null;
+	week: {
+		done: number;
+		total: number;
+		days: DayStat[];
+		warnings?: CoverageWarning[];
+	} | null;
 	subscription?: {
 		hasAccess: boolean;
 		canStartTrial: boolean;

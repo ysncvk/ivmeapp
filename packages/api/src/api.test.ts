@@ -857,6 +857,133 @@ describe("veli raporları ve konu haritası", () => {
 	});
 });
 
+describe("rıza, erişim şeffaflığı ve kaynak isteği (ADR-0004/0010/0012/0014)", () => {
+	it("çocuk yalnızca kendi aydınlatma onayını verir; aynı sürüm iki kez kaydedilmez", async () => {
+		const { child, g } = await family();
+		const [u] = await t.db
+			.select()
+			.from(user)
+			.where(eq(user.username, child.username ?? ""));
+		const s = await ctxFor(u?.id ?? null);
+		await expect(
+			call(
+				appRouter.account.acceptConsent,
+				{ kind: "parental_consent", version: "v1" },
+				{ context: s },
+			),
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+		// Veli çocuk adına aydınlatma onayı veremez
+		await expect(
+			call(
+				appRouter.account.acceptConsent,
+				{ kind: "child_notice", version: "v1" },
+				{ context: g },
+			),
+		).rejects.toMatchObject({ code: "FORBIDDEN" });
+		for (let i = 0; i < 2; i++) {
+			await call(
+				appRouter.account.acceptConsent,
+				{ kind: "child_notice", version: "v1" },
+				{ context: s },
+			);
+		}
+		const me = await call(appRouter.account.me, undefined, { context: s });
+		expect(me.consents.filter((c) => c.kind === "child_notice")).toHaveLength(
+			1,
+		);
+	});
+
+	it("pazarlama onayı ayrı verilir ve geri alınabilir; hizmet rızası etkilenmez", async () => {
+		const { g } = await family();
+		await call(
+			appRouter.account.acceptConsent,
+			{ kind: "marketing", version: "v1" },
+			{ context: g },
+		);
+		let me = await call(appRouter.account.me, undefined, { context: g });
+		expect(me.consents.some((c) => c.kind === "marketing")).toBe(true);
+		await call(appRouter.account.revokeMarketing, undefined, { context: g });
+		me = await call(appRouter.account.me, undefined, { context: g });
+		expect(me.consents.some((c) => c.kind === "marketing")).toBe(false);
+		expect(me.consents.some((c) => c.kind === "parental_consent")).toBe(true);
+	});
+
+	it("veli, çocuğunun verisine kimlerin baktığını görür; başka veli göremez", async () => {
+		const { g, child } = await family();
+		const tc = await ctxFor(await signUp("teacher"));
+		const group = await call(
+			appRouter.teacher.groups.create,
+			{ name: "6-B" },
+			{ context: tc },
+		);
+		await call(
+			appRouter.groups.join,
+			{ code: group.joinCode, childId: child.id },
+			{ context: g },
+		);
+		await call(
+			appRouter.teacher.groups.roster,
+			{ groupId: group.id },
+			{ context: tc },
+		);
+		const log = await call(
+			appRouter.children.accessLog,
+			{ childId: child.id },
+			{ context: g },
+		);
+		expect(log.length).toBeGreaterThan(0);
+		expect(log[0]).toMatchObject({ actorRole: "teacher" });
+		expect(log[0]?.actorName).toBe("Ayşe Öğretmen");
+		const other = await family();
+		await expect(
+			call(
+				appRouter.children.accessLog,
+				{ childId: child.id },
+				{ context: other.g },
+			),
+		).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+		// Veli çocuğu gruptan çıkarınca öğretmen artık göremez (ADR-0012)
+		await call(
+			appRouter.groups.leave,
+			{ childId: child.id, groupId: group.id },
+			{ context: g },
+		);
+		const roster = await call(
+			appRouter.teacher.groups.roster,
+			{ groupId: group.id },
+			{ context: tc },
+		);
+		expect(roster.members).toHaveLength(0);
+	});
+
+	it("kaynak isteği kaydedilir; kullanıcı başına sınırlıdır", async () => {
+		const { g } = await family();
+		await call(
+			appRouter.library.requestBook,
+			{
+				title: "Yeni Nesil Fen 6",
+				subject: "fen",
+				note: "Okulda bunu kullanıyoruz",
+			},
+			{ context: g },
+		);
+		await expect(
+			call(appRouter.library.requestBook, { title: "x" }, { context: g }),
+		).rejects.toThrow();
+		for (let i = 0; i < 19; i++) {
+			await call(
+				appRouter.library.requestBook,
+				{ title: `Kaynak ${i}` },
+				{ context: g },
+			);
+		}
+		await expect(
+			call(appRouter.library.requestBook, { title: "Fazla" }, { context: g }),
+		).rejects.toMatchObject({ message: "too_many_requests" });
+	});
+});
+
 describe("bakım işleri", () => {
 	it("Pazar işi gelecek haftanın planını bir kez kurar; saklama süresi dolan plan silinir", async () => {
 		const { g, child } = await family();

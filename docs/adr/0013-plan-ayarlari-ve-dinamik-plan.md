@@ -1,6 +1,6 @@
 # ADR-0013: Plan ayarları ve dinamik plan kuralları
 
-- **Durum:** Kabul
+- **Durum:** Kabul (kısmen değiştirildi: ADR-0017)
 - **Tarih:** 2026-10-02
 
 ## Bağlam

@@ -1,4 +1,8 @@
-import { rewardProgress } from "@ivmeapp/core";
+import {
+	type CoverageWarning,
+	rewardProgress,
+	type Subject,
+} from "@ivmeapp/core";
 import { cn } from "@ivmeapp/ui/lib/utils";
 import {
 	CalendarDays,
@@ -31,6 +35,7 @@ export interface GuardianActions {
 	onStartTrial?: (childId: string) => void;
 	onAddHomework?: (childId: string) => void;
 	onToggleHomework?: (childId: string, id: string, done: boolean) => void;
+	onRemoveHomework?: (childId: string, id: string) => void;
 	onAddExam?: (childId: string) => void;
 	onEditRewards?: (childId: string) => void;
 	onEditQuestions?: (childId: string) => void;
@@ -294,6 +299,7 @@ function WeekCard({ child }: { child: ChildData }) {
 				</span>
 			</div>
 			<DayColumns days={child.week.days} />
+			<CoverageNotes warnings={child.week.warnings} />
 		</Card>
 	);
 }
@@ -499,6 +505,19 @@ function HomeworkCard({
 							>
 								{h.done ? "Yapıldı" : "Bekliyor"}
 							</button>
+							{h.source !== "teacher" && (
+								<button
+									type="button"
+									aria-label={`${h.title} ödevini sil`}
+									onClick={() => {
+										if (window.confirm(`"${h.title}" ödevi silinsin mi?`))
+											actions.onRemoveHomework?.(child.id, h.id);
+									}}
+									className="min-h-9 shrink-0 rounded-full px-2 font-bold text-destructive text-xs outline-none hover:bg-muted focus-visible:ring-4 focus-visible:ring-ring/40"
+								>
+									Sil
+								</button>
+							)}
 						</li>
 					);
 				})}
@@ -760,6 +779,7 @@ function QuestionsCard({
 					})}
 				</div>
 			</figure>
+			<CoverageNotes warnings={plan?.warnings} goalMode />
 			{plan && plan.total > 0 && (
 				<p className="mt-4 rounded-2xl bg-accent px-3 py-2 font-semibold text-accent-foreground text-sm">
 					Önerilen testler: <b>{plan.done}</b> / {plan.total} tamamlandı. Bir
@@ -839,5 +859,67 @@ function RewardBanner({
 				</div>
 			))}
 		</section>
+	);
+}
+
+const SUBJECT_NAME: Record<Subject, string> = {
+	matematik: "Matematik",
+	turkce: "Türkçe",
+	fen: "Fen Bilimleri",
+	sosyal: "Sosyal Bilgiler",
+	ingilizce: "İngilizce",
+};
+
+/**
+ * ADR-0013 madde 4: kapsama uyarısı. Ayarlarla müfredata yetişilemiyorsa ya da plan sıkışıyorsa veli
+ * bunu görür; engel değil bilgidir. Soru hedefi kipinde kitaptan kalan işler gürültüdür, gösterilmez.
+ */
+function CoverageNotes({
+	warnings,
+	goalMode = false,
+}: {
+	warnings?: CoverageWarning[];
+	goalMode?: boolean;
+}) {
+	const notes = (warnings ?? []).flatMap((w): string[] => {
+		switch (w.code) {
+			case "homework_unplaced":
+				return [
+					`${w.count} okul ödevi bu hafta plana yerleşemedi; Ödevler kartında görünür.`,
+				];
+			case "target_missed":
+				return goalMode
+					? []
+					: [
+							`${SUBJECT_NAME[w.subject]} bu hafta ${w.days} gün (hedef ${w.target}). Çalışma günü ya da günlük süre artırılırsa yetişir.`,
+						];
+			case "items_cut":
+				return goalMode
+					? []
+					: [
+							`Bu ayarlarla ${w.count} iş bu hafta sığmadı; sonraki haftaya devredilir.`,
+						];
+			case "no_rest_day":
+				return [
+					"Haftanın her günü çalışma günü: haftada bir gün dinlenme önerilir.",
+				];
+			case "budget_below_block":
+				return ["Günlük süre blok süresinden kısa; ayarlardan düzeltin."];
+			case "subject_off":
+				return goalMode ? [] : [`${SUBJECT_NAME[w.subject]} plana kapalı.`];
+			default:
+				return [];
+		}
+	});
+	if (notes.length === 0) return null;
+	return (
+		<ul
+			aria-label="Plan uyarıları"
+			className="mt-3 flex flex-col gap-1.5 rounded-2xl bg-accent px-3 py-2 text-accent-foreground text-sm"
+		>
+			{notes.map((n) => (
+				<li key={n}>{n}</li>
+			))}
+		</ul>
 	);
 }

@@ -125,6 +125,20 @@ describe("soru hedefi modu (dailyTests)", () => {
 		expect(perDay(plan, "matematik")).toEqual([4, 4, 4, 4, 4, 4]);
 	});
 
+	it("görev taşıma kapasiteyle reddedilmez; günler kaydığı için yeni sayılar yazılır", () => {
+		const plan = goal();
+		const task = plan.days[0]?.tasks.find((t) => t.subject === "matematik");
+		if (!task) throw new Error("görev yok");
+		const moved = moveTask(plan, task.id, 4);
+		expect(moved.ok).toBe(true);
+		if (!moved.ok) return;
+		expect(moved.displaced).toBeUndefined();
+		expect(perDay(moved.plan, "matematik")[0]).toBe(3);
+		expect(perDay(moved.plan, "matematik")[3]).toBe(5);
+		// Toplam görev sayısı aynı kalır
+		expect(allTasks(moved.plan)).toHaveLength(allTasks(plan).length);
+	});
+
 	it("hedefsiz ders planda yer almaz; aynı girdide aynı plan çıkar", () => {
 		const plan = goal({}, { matematik: 2, fen: 0 });
 		expect(allTasks(plan).every((t) => t.subject === "matematik")).toBe(true);
