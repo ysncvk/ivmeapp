@@ -1,0 +1,31 @@
+# Render Blueprint: tek web servisi (API + derlenmiş web arayüzü, tek port).
+# Adımlar: docs/kurulum-bulut.md. Veritabanı Neon'da; DATABASE_URL panelden girilir.
+# Ücretsiz planda boşta 15 dk sonra uyur ve preDeployCommand yoktur, bu yüzden migration derlemede çalışır.
+services:
+  - type: web
+    name: ivme
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: pnpm install --frozen-lockfile && pnpm prod:build && pnpm --filter @ivmeapp/db exec drizzle-kit migrate
+    startCommand: cd apps/server && node dist/index.mjs
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Derlenmiş web arayüzü, apps/server klasörüne göre
+      - key: WEB_DIST
+        value: ../web/dist
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      # Aşağıdakiler panelden elle girilir (sync: false)
+      - key: DATABASE_URL
+        sync: false
+      - key: BETTER_AUTH_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: VITE_SERVER_URL
+        sync: false
