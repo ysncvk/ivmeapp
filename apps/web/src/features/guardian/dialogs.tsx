@@ -564,6 +564,9 @@ export function SettingsDialog({
 	const status = useQuery(
 		orpc.library.curriculumStatus.queryOptions({ input: { childId } }),
 	);
+	const goalsSet =
+		useQuery(orpc.questions.overview.queryOptions({ input: { childId } })).data
+			?.subjects.length ?? 0;
 	const [draft, setDraft] = useState<NonNullable<typeof settings.data>>();
 	const [message, setMessage] = useState<string>();
 	const [newPassword, setNewPassword] = useState("");
@@ -629,6 +632,13 @@ export function SettingsDialog({
 
 			<section className="flex flex-col gap-3">
 				<h3 className="font-extrabold">Çalışma düzeni</h3>
+				{goalsSet > 0 && (
+					<p className="rounded-xl bg-accent px-3 py-2 text-sm">
+						Günlük soru hedefi belirlediniz: günlük yük hedeften hesaplanır,
+						aşağıdaki günlük süre kullanılmaz. Hedefleri veli ekranındaki soru
+						hedefi kartından değiştirebilirsiniz.
+					</p>
+				)}
 				<Field label="Günlük süre (dk)">
 					<TextInput
 						inputMode="numeric"

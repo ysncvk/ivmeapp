@@ -73,9 +73,12 @@ export function GuardianScreen({
 								key={`q-${child.id}`}
 								childId={child.id}
 								data={child.questions}
+								week={child.week}
 								actions={actions}
 							/>
-							<WeekCard key={`w-${child.id}`} child={child} />
+							{!hasGoals(child) && (
+								<WeekCard key={`w-${child.id}`} child={child} />
+							)}
 							<RewardsCard
 								key={`r-${child.id}`}
 								childId={child.id}
@@ -357,11 +360,14 @@ function PaywallCard({
 			<div className="relative">
 				<Sparkles aria-hidden className="size-6 text-ivme-orange" />
 				<p className="mt-2 font-extrabold text-xl leading-snug">
-					{child.name} {lead}
+					{hasGoals(child)
+						? "Hedefler hazır. Hangi testi çözeceğini koçluk söylesin."
+						: `${child.name} ${lead}`}
 				</p>
 				<p className="mt-1 text-sm text-white/80">
-					Bu konular için haftalık program oluştur: kitap, sayfa ve test
-					numarasıyla, gün gün.
+					{hasGoals(child)
+						? "Günlük soru hedefini kitap, sayfa ve test numarasına çeviririz: gün gün, zayıf konulara öncelik vererek."
+						: "Bu konular için haftalık program oluştur: kitap, sayfa ve test numarasıyla, gün gün."}
 				</p>
 				{canTrial ? (
 					<button
@@ -377,7 +383,8 @@ function PaywallCard({
 					</p>
 				)}
 				<p className="mt-2 text-center text-white/70 text-xs">
-					Kart bilgisi gerekmez. Ödev takibi her zaman ücretsizdir.
+					Kart bilgisi gerekmez. Soru hedefi ve ödev takibi her zaman
+					ücretsizdir.
 				</p>
 			</div>
 		</section>
@@ -587,13 +594,20 @@ function RewardsCard({
 const WEEKDAYS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 
 /** Basit mod: ders başına günlük soru hedefi ve haftalık gidişat. */
+function hasGoals(child: ChildData): boolean {
+	return (child.questions?.subjects.length ?? 0) > 0;
+}
+
 function QuestionsCard({
 	childId,
 	data,
+	week: plan,
 	actions,
 }: {
 	childId: string;
 	data?: QuestionsData;
+	/** Koçluk planı varsa hedefin test karşılığı: tamamlanan test sayısı aynı kartta gösterilir. */
+	week: ChildData["week"];
 	actions: GuardianActions;
 }) {
 	const edit = (
@@ -679,6 +693,12 @@ function QuestionsCard({
 					})}
 				</div>
 			</figure>
+			{plan && plan.total > 0 && (
+				<p className="mt-4 rounded-2xl bg-accent px-3 py-2 font-semibold text-accent-foreground text-sm">
+					Önerilen testler: <b>{plan.done}</b> / {plan.total} tamamlandı. Bir
+					testi işaretlemek soru sayısına otomatik eklenir.
+				</p>
+			)}
 			<ul className="mt-4 flex flex-col gap-2">
 				{data.subjects.map((s) => {
 					const meta = SUBJECTS[s.subject];

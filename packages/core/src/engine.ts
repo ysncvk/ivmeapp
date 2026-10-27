@@ -143,7 +143,14 @@ export function generateWeeklyPlan(input: PlanInput): WeeklyPlan {
 	const days = [...settings.studyDays].sort((a, b) => a - b);
 
 	const budget = settings.dailyBudgetMinutes;
-	const slotsPerDay = Math.max(1, Math.floor(budget / settings.blockMinutes));
+	const dailyTotal = sum(
+		SUBJECT_ORDER.map((s) =>
+			Math.max(0, Math.floor(settings.dailyTests?.[s] ?? 0)),
+		),
+	);
+	const slotsPerDay = settings.dailyTests
+		? Math.max(1, dailyTotal)
+		: Math.max(1, Math.floor(budget / settings.blockMinutes));
 	const taskMinutes = Math.min(settings.blockMinutes, budget);
 	const enabled = new Set(settings.subjects);
 
@@ -198,131 +205,232 @@ export function generateWeeklyPlan(input: PlanInput): WeeklyPlan {
 	const weak = claim(input.weakTopics.filter((i) => enabled.has(i.subject)));
 	const review = claim(input.reviewItems.filter((i) => enabled.has(i.subject)));
 
-	const totalFree = sum(days.map(room));
 	const weeklyLens = SUBJECT_ORDER.map((s) => weekly.get(s)?.length ?? 0);
-	const [weeklyTarget = 0, weakTarget = 0, reviewTarget = 0] = apportionCapped(
-		totalFree,
-		POOL_WEIGHTS,
-		[sum(weeklyLens), weak.length, review.length],
-	);
 
-	// 3) Ders kotaları: önce tüm derslere ağırlıkla; sonra beceri derslerine hedef gün
-	// güvencesi, en büyük kotalı dersten devredilerek (toplam değişmez).
-	const quota = new Map<Subject, number>();
-	const weighted = apportionCapped(
-		weeklyTarget,
-		SUBJECT_ORDER.map((s) => SUBJECT_WEIGHT[s]),
-		weeklyLens,
-	);
-	SUBJECT_ORDER.forEach((s, i) => {
-		quota.set(s, weighted[i] ?? 0);
-	});
-	const floorOf = (s: Subject) =>
-		SKILL_SUBJECTS.includes(s)
-			? Math.min(
-					LIMITS.minMathAndTurkishDaysPerWeek,
-					days.length,
-					weekly.get(s)?.length ?? 0,
-				)
-			: 0;
-	for (const s of SKILL_SUBJECTS) {
-		while ((quota.get(s) ?? 0) < floorOf(s)) {
-			let donor: Subject | undefined;
-			let best = 0;
-			for (const o of SUBJECT_ORDER) {
-				const q = quota.get(o) ?? 0;
-				if (o !== s && q > floorOf(o) && q > best) {
-					best = q;
-					donor = o;
+	// Soru hedefi modu: her gün her derse tam hedefin test sayısı kadar yuva (ADR-0013 kota
+	// tabanlıdır; burada kota günlük ve ders başınadır).
+	const placeDaily = () => {
+		const tests = settings.dailyTests ?? {};
+		const slots = new Map<number, Map<Subject, number>>();
+		for (const d of days) {
+			const m = new Map<Subject, number>();
+			for (const s of SUBJECT_ORDER) {
+				const n = enabled.has(s) ? Math.max(0, Math.floor(tests[s] ?? 0)) : 0;
+				if (n > 0) m.set(s, n);
+			}
+			// Ödev Blok 1'i alır: yuva önce aynı dersten, yoksa en çok yuvası olan dersten düşer
+			for (const p of pending.get(d) ?? []) {
+				if (p.kind !== "homework") continue;
+				let victim: Subject | undefined =
+					(m.get(p.subject) ?? 0) > 0 ? p.subject : undefined;
+				if (!victim) {
+					let best = 0;
+					for (const [s, n] of m) {
+						if (n > best) {
+							best = n;
+							victim = s;
+						}
+					}
 				}
+				if (victim) m.set(victim, (m.get(victim) ?? 1) - 1);
 			}
-			if (!donor) break;
-			quota.set(donor, (quota.get(donor) ?? 0) - 1);
-			quota.set(s, (quota.get(s) ?? 0) + 1);
+			slots.set(d, m);
 		}
-	}
-
-	// 4) Haftanın konusu: dersler günlere yayılır, aynı ders aynı güne yığılmaz.
-	const D = days.length;
-	const subjectsByCount = SUBJECT_ORDER.filter(
-		(s) => (quota.get(s) ?? 0) > 0,
-	).sort((a, b) => (quota.get(b) ?? 0) - (quota.get(a) ?? 0));
-	const pickDay = (start: number, s: Subject): number | undefined => {
-		for (const pass of [0, 1]) {
-			for (let j = 0; j < D; j++) {
-				const d = days[(start + j) % D];
-				if (d === undefined || room(d) <= 0) continue;
-				if (pass === 0 && has(d, s)) continue;
-				return d;
+		const takeFrom = (list: WorkItem[], s: Subject): WorkItem | undefined => {
+			const i = list.findIndex((x) => x.subject === s);
+			return i < 0 ? undefined : list.splice(i, 1)[0];
+		};
+		for (const s of SUBJECT_ORDER) {
+			const positions: number[] = [];
+			for (const d of days) {
+				for (let i = 0; i < (slots.get(d)?.get(s) ?? 0); i++) positions.push(d);
 			}
-		}
-		return undefined;
-	};
-	subjectsByCount.forEach((s, k) => {
-		const c = quota.get(s) ?? 0;
-		const slots: { d: number; p: Pending }[] = [];
-		for (let i = 0; i < c; i++) {
-			const start = (k + Math.floor((i * D) / c)) % D;
-			const d = pickDay(start, s);
-			if (d === undefined) break;
-			// Yeri hemen ayır; iş aşağıda gün sırasıyla atanır (kitap sırası korunur).
-			slots.push({
-				d,
-				p: add(d, {
-					kind: "weekly_topic",
+			if (positions.length === 0) continue;
+			const total = positions.length;
+			const wk = weekly.get(s) ?? [];
+			const weakAvail = weak.filter((i) => i.subject === s).length;
+			const reviewAvail = review.filter((i) => i.subject === s).length;
+			let weakN = Math.min(weakAvail, Math.round(total * 0.3));
+			let reviewN = Math.min(reviewAvail, Math.round(total * 0.2));
+			const weeklyN = Math.min(wk.length, total - weakN - reviewN);
+			// Haftanın konusu azsa boşluk kalan zayıf konu ve tekrar işleriyle dolar
+			let free = total - weeklyN - weakN - reviewN;
+			const moreWeak = Math.min(free, weakAvail - weakN);
+			weakN += moreWeak;
+			free -= moreWeak;
+			reviewN += Math.min(free, reviewAvail - reviewN);
+			// Türler günlere yayılır (yumuşak ağırlıklı dönüşüm): her gün karışık bir yük
+			const want = { weekly: weeklyN, weak: weakN, review: reviewN };
+			const left = { ...want };
+			const credit = { weekly: 0, weak: 0, review: 0 };
+			const kinds: (keyof typeof want)[] = ["weekly", "weak", "review"];
+			const order: (keyof typeof want)[] = [];
+			for (let i = 0; i < weeklyN + weakN + reviewN; i++) {
+				for (const k of kinds) credit[k] += want[k];
+				let pick: keyof typeof want | undefined;
+				for (const k of kinds) {
+					if (left[k] > 0 && (pick === undefined || credit[pick] < credit[k]))
+						pick = k;
+				}
+				if (!pick) break;
+				credit[pick] -= weeklyN + weakN + reviewN;
+				left[pick]--;
+				order.push(pick);
+			}
+			positions.forEach((day, j) => {
+				const kind = order[j];
+				if (!kind) return;
+				const item =
+					kind === "weekly"
+						? wk.shift()
+						: takeFrom(kind === "weak" ? weak : review, s);
+				if (!item) return;
+				add(day, {
+					kind:
+						kind === "weekly"
+							? "weekly_topic"
+							: kind === "weak"
+								? "weak_topic"
+								: "spaced_review",
 					subject: s,
-					topic: "",
-					resource: "",
-					work: "",
-				}),
+					topic: item.topic,
+					resource: item.resource,
+					work: item.work,
+					item,
+				});
 			});
 		}
-		slots.sort((a, b) => a.d - b.d || a.p.seq - b.p.seq);
-		const list = weekly.get(s) ?? [];
-		for (const { p } of slots) {
-			const item = list.shift();
-			if (!item) break;
-			p.topic = item.topic;
-			p.resource = item.resource;
-			p.work = item.work;
-			p.item = item;
-		}
-	});
+	};
 
-	// 5) Zayıf konu ve aralıklı tekrar: 3:2 oranında dönüşümlü, en boş güne.
-	const kinds: ("weak" | "review")[] = [];
-	let wPlaced = 0;
-	for (let i = 0; i < weakTarget + reviewTarget; i++) {
-		const expectedW = Math.round(
-			((i + 1) * weakTarget) / (weakTarget + reviewTarget),
+	if (settings.dailyTests) {
+		placeDaily();
+	} else {
+		const totalFree = sum(days.map(room));
+		const [weeklyTarget = 0, weakTarget = 0, reviewTarget = 0] =
+			apportionCapped(totalFree, POOL_WEIGHTS, [
+				sum(weeklyLens),
+				weak.length,
+				review.length,
+			]);
+
+		// 3) Ders kotaları: önce tüm derslere ağırlıkla; sonra beceri derslerine hedef gün
+		// güvencesi, en büyük kotalı dersten devredilerek (toplam değişmez).
+		const quota = new Map<Subject, number>();
+		const weighted = apportionCapped(
+			weeklyTarget,
+			SUBJECT_ORDER.map((s) => SUBJECT_WEIGHT[s]),
+			weeklyLens,
 		);
-		const rPlaced = i - wPlaced;
-		if (
-			(wPlaced < expectedW || rPlaced >= reviewTarget) &&
-			wPlaced < weakTarget
-		) {
-			kinds.push("weak");
-			wPlaced++;
-		} else kinds.push("review");
-	}
-	for (const kind of kinds) {
-		const item = (kind === "weak" ? weak : review).shift();
-		if (!item) continue;
-		const open = days.filter((d) => room(d) > 0);
-		const ranked = [...open].sort((a, b) => room(b) - room(a) || a - b);
-		const d = ranked.find((x) => !has(x, item.subject)) ?? ranked[0];
-		if (d === undefined) {
-			(kind === "weak" ? weak : review).unshift(item);
-			break;
-		}
-		add(d, {
-			kind: kind === "weak" ? "weak_topic" : "spaced_review",
-			subject: item.subject,
-			topic: item.topic,
-			resource: item.resource,
-			work: item.work,
-			item,
+		SUBJECT_ORDER.forEach((s, i) => {
+			quota.set(s, weighted[i] ?? 0);
 		});
+		const floorOf = (s: Subject) =>
+			SKILL_SUBJECTS.includes(s)
+				? Math.min(
+						LIMITS.minMathAndTurkishDaysPerWeek,
+						days.length,
+						weekly.get(s)?.length ?? 0,
+					)
+				: 0;
+		for (const s of SKILL_SUBJECTS) {
+			while ((quota.get(s) ?? 0) < floorOf(s)) {
+				let donor: Subject | undefined;
+				let best = 0;
+				for (const o of SUBJECT_ORDER) {
+					const q = quota.get(o) ?? 0;
+					if (o !== s && q > floorOf(o) && q > best) {
+						best = q;
+						donor = o;
+					}
+				}
+				if (!donor) break;
+				quota.set(donor, (quota.get(donor) ?? 0) - 1);
+				quota.set(s, (quota.get(s) ?? 0) + 1);
+			}
+		}
+
+		// 4) Haftanın konusu: dersler günlere yayılır, aynı ders aynı güne yığılmaz.
+		const D = days.length;
+		const subjectsByCount = SUBJECT_ORDER.filter(
+			(s) => (quota.get(s) ?? 0) > 0,
+		).sort((a, b) => (quota.get(b) ?? 0) - (quota.get(a) ?? 0));
+		const pickDay = (start: number, s: Subject): number | undefined => {
+			for (const pass of [0, 1]) {
+				for (let j = 0; j < D; j++) {
+					const d = days[(start + j) % D];
+					if (d === undefined || room(d) <= 0) continue;
+					if (pass === 0 && has(d, s)) continue;
+					return d;
+				}
+			}
+			return undefined;
+		};
+		subjectsByCount.forEach((s, k) => {
+			const c = quota.get(s) ?? 0;
+			const slots: { d: number; p: Pending }[] = [];
+			for (let i = 0; i < c; i++) {
+				const start = (k + Math.floor((i * D) / c)) % D;
+				const d = pickDay(start, s);
+				if (d === undefined) break;
+				// Yeri hemen ayır; iş aşağıda gün sırasıyla atanır (kitap sırası korunur).
+				slots.push({
+					d,
+					p: add(d, {
+						kind: "weekly_topic",
+						subject: s,
+						topic: "",
+						resource: "",
+						work: "",
+					}),
+				});
+			}
+			slots.sort((a, b) => a.d - b.d || a.p.seq - b.p.seq);
+			const list = weekly.get(s) ?? [];
+			for (const { p } of slots) {
+				const item = list.shift();
+				if (!item) break;
+				p.topic = item.topic;
+				p.resource = item.resource;
+				p.work = item.work;
+				p.item = item;
+			}
+		});
+
+		// 5) Zayıf konu ve aralıklı tekrar: 3:2 oranında dönüşümlü, en boş güne.
+		const kinds: ("weak" | "review")[] = [];
+		let wPlaced = 0;
+		for (let i = 0; i < weakTarget + reviewTarget; i++) {
+			const expectedW = Math.round(
+				((i + 1) * weakTarget) / (weakTarget + reviewTarget),
+			);
+			const rPlaced = i - wPlaced;
+			if (
+				(wPlaced < expectedW || rPlaced >= reviewTarget) &&
+				wPlaced < weakTarget
+			) {
+				kinds.push("weak");
+				wPlaced++;
+			} else kinds.push("review");
+		}
+		for (const kind of kinds) {
+			const item = (kind === "weak" ? weak : review).shift();
+			if (!item) continue;
+			const open = days.filter((d) => room(d) > 0);
+			const ranked = [...open].sort((a, b) => room(b) - room(a) || a - b);
+			const d = ranked.find((x) => !has(x, item.subject)) ?? ranked[0];
+			if (d === undefined) {
+				(kind === "weak" ? weak : review).unshift(item);
+				break;
+			}
+			add(d, {
+				kind: kind === "weak" ? "weak_topic" : "spaced_review",
+				subject: item.subject,
+				topic: item.topic,
+				resource: item.resource,
+				work: item.work,
+				item,
+			});
+		}
 	}
 
 	// 6) Günleri kur: ödev, haftanın konusu, zayıf/tekrar sırasıyla.

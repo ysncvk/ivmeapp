@@ -39,6 +39,8 @@ interface Props {
 	locked?: boolean;
 	/** Basit mod: günlük soru hedefi kartları. Plan görevi yoksa "0 görev" başlığı yerine selam gösterilir. */
 	questions?: ReactNode;
+	/** Soru kartında gösterilen derslerin testleri ana listede tekrarlanmaz (ödevler hep listede kalır). */
+	groupedSubjects?: readonly Subject[];
 	onToggleTask: (id: string, done: boolean) => void;
 	onToggleHomework?: (id: string, done: boolean) => void;
 	onSignOut?: () => void;
@@ -58,6 +60,7 @@ export function TodayScreen({
 	reward,
 	locked = false,
 	questions,
+	groupedSubjects = [],
 	onToggleTask,
 	onToggleHomework,
 	onSignOut,
@@ -66,6 +69,10 @@ export function TodayScreen({
 	const allDone = tasks.length > 0 && doneCount === tasks.length;
 	const topics = [...new Set(tasks.map((t) => t.topic))];
 	const questionsOnly = questions != null && tasks.length === 0;
+	const looseTasks = tasks.filter(
+		(t) =>
+			t.reason.source === "homework" || !groupedSubjects.includes(t.subject),
+	);
 
 	return (
 		<div className="min-h-svh bg-[radial-gradient(60rem_40rem_at_50%_-10%,color-mix(in_oklch,var(--ivme-violet)_16%,transparent),transparent)]">
@@ -99,7 +106,7 @@ export function TodayScreen({
 				)}
 
 				<section aria-label="Bugünün görevleri" className="flex flex-col gap-3">
-					{tasks.map((task, i) => (
+					{looseTasks.map((task, i) => (
 						<TaskCard
 							key={task.id}
 							task={task}

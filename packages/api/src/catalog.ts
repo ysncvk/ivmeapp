@@ -32,3 +32,21 @@ export function curriculumFor(
 ): Curriculum | undefined {
 	return curricula.find((c) => c.subject === subject && c.grade === grade);
 }
+
+/**
+ * Plan görevinin kütüphane iş kimliğinden (`kitap:bölüm:tNo`) testin soru sayısı. Ödev görevi ya da
+ * bilinmeyen kimlik için null. Test kendi sayısını taşıyorsa o, yoksa kitabın varsayılanı.
+ */
+export function questionsForItem(
+	itemId: string | null | undefined,
+): number | null {
+	if (!itemId || itemId.startsWith("hw:")) return null;
+	const [bookId, sectionId, testPart] = itemId.split(":");
+	const book = bookById(bookId ?? "");
+	if (!book || !sectionId || !testPart?.startsWith("t")) return null;
+	const no = Number(testPart.slice(1));
+	const section = book.sections.find((x) => x.id === sectionId);
+	const test = section?.units.flatMap((u) => u.tests).find((t) => t.no === no);
+	if (!test) return null;
+	return test.questions ?? book.questionsPerTest ?? null;
+}

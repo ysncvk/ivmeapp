@@ -50,6 +50,13 @@ export interface PlanSettings {
 	blockMinutes: number;
 	/** Plana açık dersler. */
 	subjects: readonly Subject[];
+	/**
+	 * Ders başına günlük test sayısı (soru hedefinin test karşılığı). Verilirse her çalışma günü her
+	 * derse tam bu kadar yuva ayrılır; haftanın konusu / zayıf konu / tekrar bu yuvaların içinde
+	 * ağırlıkla (%50/%30/%20) paylaşılır. Okul ödevi yuvadan düşmez, yuvasını aynı dersten ya da en
+	 * kalabalık dersten alır.
+	 */
+	dailyTests?: Partial<Record<Subject, number>>;
 	idleTime: IdleTime;
 }
 

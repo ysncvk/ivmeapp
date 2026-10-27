@@ -1,4 +1,10 @@
-import { addDays, istanbulDate, mondayOf, type Subject } from "@ivmeapp/core";
+import {
+	addDays,
+	istanbulDate,
+	mondayOf,
+	type Subject,
+	testsPerDay,
+} from "@ivmeapp/core";
 import { childSource, dailyGoal, questionLog } from "@ivmeapp/db/schema/domain";
 import { ORPCError } from "@orpc/server";
 import { and, eq, gte, lte } from "drizzle-orm";
@@ -8,6 +14,7 @@ import { resolveFamilyChild, resolveGuardianChild } from "../authz";
 import { bookById, SUBJECTS } from "../catalog";
 import { type Context, clock } from "../context";
 import { familyProcedure, guardianProcedure } from "../index";
+import { childHasPlanAccess, rebuildPlan } from "../services/plan";
 
 const subject = z.enum(SUBJECTS);
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -70,7 +77,7 @@ export const questionsRouter = {
 					solvedToday:
 						logRows.find((l) => l.subject === s && l.day === today)?.solved ??
 						0,
-					tests: size ? Math.ceil(goal / size) : null,
+					tests: size ? testsPerDay(goal, size) : null,
 				};
 			});
 
@@ -143,6 +150,12 @@ export const questionsRouter = {
 					}
 				}
 			});
+			// Ücretli koçluk açıksa bu haftanın planı yeni hedefe göre kurulur; işaretlenmiş görev varsa
+			// plan olduğu gibi kalır ve yeni hedef sonraki haftanın planında geçerli olur (K-014).
+			const now = clock(context);
+			if (await childHasPlanAccess(context.db, child.id, now)) {
+				await rebuildPlan(context.db, child, mondayOf(istanbulDate(now)), now);
+			}
 			return { ok: true };
 		}),
 

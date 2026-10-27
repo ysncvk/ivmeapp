@@ -20,7 +20,12 @@ function StudentPage() {
 	const questions = useQuery(
 		orpc.questions.overview.queryOptions({ input: {} }),
 	);
-	const refresh = () => qc.invalidateQueries({ queryKey: orpc.plan.key() });
+	// Test işaretlemek soru sayacını da değiştirir
+	const refresh = () =>
+		Promise.all([
+			qc.invalidateQueries({ queryKey: orpc.plan.key() }),
+			qc.invalidateQueries({ queryKey: orpc.questions.key() }),
+		]);
 	const questionsKey = orpc.questions.overview.queryKey({ input: {} });
 	const logQuestions = useMutation(
 		orpc.questions.log.mutationOptions({
@@ -61,10 +66,13 @@ function StudentPage() {
 			tasks={d.tasks.map((t) => ({ ...t, day: t.day, reason: t.reason }))}
 			homework={d.homework.map((h) => ({ ...h }))}
 			locked={d.locked}
+			groupedSubjects={questions.data?.subjects.map((x) => x.subject)}
 			questions={
 				questions.data && questions.data.subjects.length > 0 ? (
 					<QuestionGoals
 						goals={questions.data.subjects}
+						tasks={d.tasks.filter((t) => t.reason.source !== "homework")}
+						onToggleTask={(taskId, done) => toggleTask.mutate({ taskId, done })}
 						onChange={(subject, solved) =>
 							logQuestions.mutate({ subject, solved })
 						}

@@ -4,6 +4,14 @@ import { Check } from "lucide-react";
 
 import { SUBJECTS } from "./subjects";
 
+export interface QuestionTask {
+	id: string;
+	subject: Subject;
+	topic: string;
+	work: string;
+	done: boolean;
+}
+
 export interface QuestionGoal {
 	subject: Subject;
 	goal: number;
@@ -14,19 +22,33 @@ export interface QuestionGoal {
 
 interface Props {
 	goals: QuestionGoal[];
+	/** Koçluk açıkken hedefin test karşılığı: bugünün testleri ilgili dersin kartında listelenir. */
+	tasks?: QuestionTask[];
 	onChange: (subject: Subject, solved: number) => void;
+	onToggleTask?: (id: string, done: boolean) => void;
 }
 
 const STEPS = [-5, 5, 10] as const;
 
 /** Basit mod: ders başına "bugün kaç soru çözdüm". Süre ya da doğru sayısı sorulmaz. */
-export function QuestionGoals({ goals, onChange }: Props) {
+export function QuestionGoals({
+	goals,
+	tasks = [],
+	onChange,
+	onToggleTask,
+}: Props) {
 	if (goals.length === 0) return null;
 	return (
 		<section aria-label="Bugünün soru hedefi" className="flex flex-col gap-3">
 			<h2 className="font-extrabold text-xl">Bugünün soruları</h2>
 			{goals.map((g) => (
-				<GoalCard key={g.subject} goal={g} onChange={onChange} />
+				<GoalCard
+					key={g.subject}
+					goal={g}
+					tasks={tasks.filter((t) => t.subject === g.subject)}
+					onChange={onChange}
+					onToggleTask={onToggleTask}
+				/>
 			))}
 		</section>
 	);
@@ -34,10 +56,14 @@ export function QuestionGoals({ goals, onChange }: Props) {
 
 function GoalCard({
 	goal,
+	tasks,
 	onChange,
+	onToggleTask,
 }: {
 	goal: QuestionGoal;
+	tasks: QuestionTask[];
 	onChange: Props["onChange"];
+	onToggleTask?: Props["onToggleTask"];
 }) {
 	const meta = SUBJECTS[goal.subject];
 	const Icon = meta.icon;
@@ -122,6 +148,48 @@ function GoalCard({
 					</button>
 				)}
 			</div>
+			{tasks.length > 0 && (
+				<ul
+					aria-label={`${meta.label} için önerilen testler`}
+					className="mt-3 flex flex-col gap-2 border-t pt-3"
+				>
+					{tasks.map((t) => (
+						<li key={t.id}>
+							<label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl px-1 has-[input:focus-visible]:ring-4 has-[input:focus-visible]:ring-ring/40">
+								<input
+									type="checkbox"
+									checked={t.done}
+									onChange={() => onToggleTask?.(t.id, !t.done)}
+									className="sr-only"
+								/>
+								<span
+									className={cn(
+										"grid size-8 shrink-0 place-items-center rounded-full border-2 transition-colors",
+										t.done
+											? "border-transparent bg-ivme-orange text-white"
+											: "border-border text-transparent",
+									)}
+								>
+									<Check className="size-4" strokeWidth={3.2} />
+								</span>
+								<span className="min-w-0">
+									<span
+										className={cn(
+											"block font-bold leading-tight",
+											t.done && "text-muted-foreground line-through",
+										)}
+									>
+										{t.work}
+									</span>
+									<span className="block truncate text-muted-foreground text-xs">
+										{t.topic}
+									</span>
+								</span>
+							</label>
+						</li>
+					))}
+				</ul>
+			)}
 		</div>
 	);
 }

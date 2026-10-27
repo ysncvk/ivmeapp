@@ -443,8 +443,8 @@ describe("soru hedefi (basit mod)", () => {
 			["matematik", 50, 0],
 			["fen", 30, 0],
 		]);
-		// Fenomen kitapları test başına 12 soru: 50 → 5 test, 30 → 3 test
-		expect(o.subjects.map((x) => x.tests)).toEqual([5, 3]);
+		// Fenomen kitapları test başına 12 soru: 50 → 4 test, 30 → 3 test
+		expect(o.subjects.map((x) => x.tests)).toEqual([4, 3]);
 		// 6 çalışma günü × (50 + 30)
 		expect(o.week).toEqual({ goal: 480, solved: 0 });
 
@@ -554,6 +554,169 @@ describe("soru hedefi (basit mod)", () => {
 				{ context: await ctxFor(await signUp("teacher")) },
 			),
 		).rejects.toMatchObject({ code: "FORBIDDEN" });
+	});
+});
+
+describe("soru hedefi ve koçluk birleşimi", () => {
+	async function paidFamily() {
+		const f = await family();
+		await call(
+			appRouter.children.settings.update,
+			{ childId: f.child.id, sources: BOOKS },
+			{ context: f.g },
+		);
+		await call(
+			appRouter.subscription.startTrial,
+			{ childId: f.child.id },
+			{ context: f.g },
+		);
+		const [u] = await t.db
+			.select()
+			.from(user)
+			.where(eq(user.username, f.child.username ?? ""));
+		return { ...f, s: await ctxFor(u?.id ?? null) };
+	}
+
+	it("hedef varken plan yalnızca hedefli dersleri, hedefin test sayısı kadar kurar", async () => {
+		const { g, child } = await paidFamily();
+		await call(
+			appRouter.questions.setGoals,
+			{
+				childId: child.id,
+				goals: [
+					{ subject: "matematik", questions: 50 },
+					{ subject: "fen", questions: 30 },
+				],
+			},
+			{ context: g },
+		);
+		const week = await call(
+			appRouter.plan.week,
+			{ childId: child.id },
+			{ context: g },
+		);
+		const days = week.plan?.days ?? [];
+		const tasks = days.flatMap((d) => d.tasks);
+		expect(new Set(tasks.map((x) => x.subject))).toEqual(
+			new Set(["matematik", "fen"]),
+		);
+		// Günde 4 + 3 = 7 test, 6 gün
+		expect(days.every((d) => d.tasks.length === 7)).toBe(true);
+		expect(tasks.filter((x) => x.subject === "matematik")).toHaveLength(24);
+		expect(tasks.filter((x) => x.subject === "fen")).toHaveLength(18);
+		// Her gün tam 4 matematik ve 3 fen testi: günlük hedef her gün tutar
+		for (const d of days) {
+			expect(d.tasks.filter((x) => x.subject === "matematik")).toHaveLength(4);
+			expect(d.tasks.filter((x) => x.subject === "fen")).toHaveLength(3);
+		}
+		// Bilinçli olarak kapalı dersler için "ders kapalı" uyarısı gösterilmez
+		expect(
+			week.plan?.coverage.warnings.some((w) => w.code === "subject_off"),
+		).toBe(false);
+	});
+
+	it("testi işaretlemek soru sayacını artırır, geri almak düşürür", async () => {
+		const { g, child, s } = await paidFamily();
+		await call(
+			appRouter.questions.setGoals,
+			{ childId: child.id, goals: [{ subject: "matematik", questions: 50 }] },
+			{ context: g },
+		);
+		const today = await call(appRouter.plan.today, {}, { context: s });
+		const tests = today.tasks.filter((x) => x.subject === "matematik");
+		expect(tests.length).toBe(4);
+		const first = tests[0];
+		const second = tests[1];
+		if (!first || !second) throw new Error("test görevi yok");
+
+		const q = () => call(appRouter.questions.overview, {}, { context: s });
+		expect((await q()).subjects[0]?.solvedToday).toBe(0);
+
+		await call(
+			appRouter.plan.toggleTask,
+			{ taskId: first.id, done: true },
+			{ context: s },
+		);
+		await call(
+			appRouter.plan.toggleTask,
+			{ taskId: second.id, done: true },
+			{ context: s },
+		);
+		// Fenomen Matematik A: test başına 12 soru
+		expect((await q()).subjects[0]?.solvedToday).toBe(24);
+
+		// Aynı işareti ikinci kez göndermek tekrar eklemez
+		await call(
+			appRouter.plan.toggleTask,
+			{ taskId: second.id, done: true },
+			{ context: s },
+		);
+		expect((await q()).subjects[0]?.solvedToday).toBe(24);
+
+		await call(
+			appRouter.plan.toggleTask,
+			{ taskId: second.id, done: false },
+			{ context: s },
+		);
+		expect((await q()).subjects[0]?.solvedToday).toBe(12);
+
+		// Elle yazılan sayı da aynı sayaçtır
+		await call(
+			appRouter.questions.log,
+			{ subject: "matematik", solved: 40 },
+			{ context: s },
+		);
+		expect((await q()).subjects[0]?.solvedToday).toBe(40);
+	});
+
+	it("hedef değişince işaretlenmemiş plan yeni hedefe göre yeniden kurulur", async () => {
+		const { g, child } = await paidFamily();
+		await call(
+			appRouter.questions.setGoals,
+			{ childId: child.id, goals: [{ subject: "matematik", questions: 24 }] },
+			{ context: g },
+		);
+		const count = async () =>
+			(
+				await call(appRouter.plan.week, { childId: child.id }, { context: g })
+			).plan?.days.flatMap((d) => d.tasks).length;
+		// 24 soru = günde 2 test × 6 gün
+		expect(await count()).toBe(12);
+		await call(
+			appRouter.questions.setGoals,
+			{ childId: child.id, goals: [{ subject: "matematik", questions: 48 }] },
+			{ context: g },
+		);
+		expect(await count()).toBe(24);
+	});
+
+	it("planı olmayan çocukta günlük hedefi tutturmak ödülü besler", async () => {
+		const { g, child, s } = await family().then(async (f) => {
+			const [u] = await t.db
+				.select()
+				.from(user)
+				.where(eq(user.username, f.child.username ?? ""));
+			return { ...f, s: await ctxFor(u?.id ?? null) };
+		});
+		await call(
+			appRouter.questions.setGoals,
+			{ childId: child.id, goals: [{ subject: "matematik", questions: 20 }] },
+			{ context: g },
+		);
+		await call(
+			appRouter.rewards.upsert,
+			{ childId: child.id, tier: "daily", title: "Sinema", threshold: 1 },
+			{ context: g },
+		);
+		const progress = async () =>
+			(await call(appRouter.rewards.list, {}, { context: s }))[0]?.progress;
+		expect((await progress())?.unlocked).toBe(false);
+		await call(
+			appRouter.questions.log,
+			{ subject: "matematik", solved: 20 },
+			{ context: s },
+		);
+		expect((await progress())?.unlocked).toBe(true);
 	});
 });
 

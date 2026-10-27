@@ -49,6 +49,94 @@ const base = (over: Partial<PlanInput> = {}): PlanInput => ({
 const allTasks = (p: ReturnType<typeof generateWeeklyPlan>) =>
 	p.days.flatMap((d) => d.tasks);
 
+describe("soru hedefi modu (dailyTests)", () => {
+	const goal = (
+		over: Partial<PlanInput> = {},
+		tests = { matematik: 4, fen: 3 },
+	) =>
+		generateWeeklyPlan(
+			base({
+				settings: settings({
+					subjects: ["matematik", "fen"],
+					dailyBudgetMinutes: 210,
+					blockMinutes: 30,
+					dailyTests: tests,
+				}),
+				weeklyTopics: {
+					matematik: items("matematik", "m-", 60),
+					fen: items("fen", "f-", 60),
+				},
+				weakTopics: [],
+				reviewItems: [],
+				...over,
+			}),
+		);
+	const perDay = (p: ReturnType<typeof generateWeeklyPlan>, s: Subject) =>
+		p.days.map((d) => d.tasks.filter((t) => t.subject === s).length);
+
+	it("her gün her derse tam hedefin test sayısı kadar görev düşer", () => {
+		const plan = goal();
+		expect(perDay(plan, "matematik")).toEqual([4, 4, 4, 4, 4, 4]);
+		expect(perDay(plan, "fen")).toEqual([3, 3, 3, 3, 3, 3]);
+	});
+
+	it("kitap sırası korunur: aynı dersin testleri gün gün ilerler", () => {
+		const plan = goal();
+		const works = plan.days
+			.flatMap((d) => d.tasks)
+			.filter((t) => t.subject === "matematik")
+			.map((t) => t.itemId);
+		expect(works).toEqual(Array.from({ length: 24 }, (_, i) => `m-${i + 1}`));
+	});
+
+	it("zayıf konu ve tekrar, dersin kendi günlük yuvalarının içinde paylaşılır", () => {
+		const plan = goal({
+			weakTopics: items("matematik", "weak-", 20),
+			reviewItems: items("matematik", "rev-", 20),
+		});
+		// Günlük yük değişmez
+		expect(perDay(plan, "matematik")).toEqual([4, 4, 4, 4, 4, 4]);
+		const m = plan.days
+			.flatMap((d) => d.tasks)
+			.filter((t) => t.subject === "matematik");
+		const by = (k: string) => m.filter((t) => t.reason.source === k).length;
+		expect(by("weak_topic")).toBe(7); // 24 × %30
+		expect(by("spaced_review")).toBe(5); // 24 × %20
+		expect(by("weekly_topic")).toBe(12);
+	});
+
+	it("okul ödevi yuvadan düşmez, yuvasını aynı dersten alır", () => {
+		const plan = goal({
+			homework: [
+				{ id: "h1", day: 2, subject: "fen", topic: "Ödev", work: "s.5" },
+			],
+		});
+		const day2 = plan.days.find((d) => d.day === 2);
+		expect(day2?.tasks.some((t) => t.reason.source === "homework")).toBe(true);
+		expect(day2?.tasks).toHaveLength(7);
+		expect(perDay(plan, "fen")[1]).toBe(3); // 2 test + 1 ödev
+		expect(perDay(plan, "matematik")[1]).toBe(4);
+	});
+
+	it("hedefsiz ders planda yer almaz; aynı girdide aynı plan çıkar", () => {
+		const plan = goal({}, { matematik: 2, fen: 0 });
+		expect(allTasks(plan).every((t) => t.subject === "matematik")).toBe(true);
+		expect(goal()).toEqual(goal());
+	});
+
+	it("havuz yetmezse yuva boş kalır, görev uydurulmaz", () => {
+		const plan = goal({
+			weeklyTopics: {
+				matematik: items("matematik", "m-", 5),
+				fen: items("fen", "f-", 60),
+			},
+		});
+		expect(
+			allTasks(plan).filter((t) => t.subject === "matematik"),
+		).toHaveLength(5);
+	});
+});
+
 describe("generateWeeklyPlan", () => {
 	it("aynı girdide aynı çıktıyı verir", () => {
 		expect(generateWeeklyPlan(base())).toEqual(generateWeeklyPlan(base()));

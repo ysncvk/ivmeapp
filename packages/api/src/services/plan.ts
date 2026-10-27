@@ -10,13 +10,16 @@ import {
 	carryOver,
 	type Homework as EngineHomework,
 	generateWeeklyPlan,
+	hasPlanAccess,
 	isoWeekday,
+	istanbulDate,
 	moveTask,
 	normalizeTr,
 	type PlanSettings,
 	type PlanTask,
 	type SourceBook,
 	type Subject,
+	testsPerDay,
 	type UnplacedHomework,
 	type WeeklyPlan,
 	type WorkItem,
@@ -28,16 +31,25 @@ import {
 	type child,
 	childSource,
 	childSubject,
+	child as childTable,
+	dailyGoal,
 	exam,
 	examWeakTopic,
 	homework,
 	plan,
 	planEvent,
 	planTask,
+	questionLog,
+	subscription,
 } from "@ivmeapp/db/schema/domain";
 import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
-import { bookById, curriculumFor, SUBJECTS } from "../catalog";
+import {
+	bookById,
+	curriculumFor,
+	questionsForItem,
+	SUBJECTS,
+} from "../catalog";
 
 type ChildRow = typeof child.$inferSelect;
 
@@ -54,6 +66,19 @@ export interface StoredPlan {
 	unplaced: UnplacedHomework[];
 	generatedAt: Date;
 	tasks: StoredTask[];
+}
+
+/** Çocuğun ücretli plan yetkisi (ADR-0014 madde 9: katman kontrolü tek noktadan). */
+export async function childHasPlanAccess(
+	db: Database,
+	childId: string,
+	now: Date,
+): Promise<boolean> {
+	const [sub] = await db
+		.select()
+		.from(subscription)
+		.where(eq(subscription.childId, childId));
+	return hasPlanAccess(sub, now);
 }
 
 export async function getPlan(
@@ -188,9 +213,22 @@ export async function buildInput(
 		.select()
 		.from(childSubject)
 		.where(eq(childSubject.childId, c.id));
-	const enabled = SUBJECTS.filter(
+	const enabledByChild = SUBJECTS.filter(
 		(s) => subjectRows.find((r) => r.subject === s)?.enabled ?? true,
 	);
+	// Soru hedefi varsa plan hedefin test karşılığıdır: yalnızca hedefli dersler planlanır, ders
+	// ağırlığı ve günlük yük hedeften türer (ADR-0014: ücretsiz hedef, ücretli "hangi test").
+	const goalRows = await db
+		.select()
+		.from(dailyGoal)
+		.where(eq(dailyGoal.childId, c.id));
+	const goals = new Map<Subject, number>(
+		goalRows.map((g) => [g.subject, g.questions]),
+	);
+	const goalSubjects = enabledByChild.filter((s) => goals.has(s));
+	const goalMode = goalSubjects.length > 0;
+	const enabled = goalMode ? goalSubjects : enabledByChild;
+	const dayTests: Partial<Record<Subject, number>> = {};
 	const offsetOf = (s: Subject) =>
 		subjectRows.find((r) => r.subject === s)?.weekOffset ?? 0;
 
@@ -242,6 +280,13 @@ export async function buildInput(
 		const books = selectedBooks(subject, c.grade, bookIds);
 		const items = interleave(books.map(bookWorkItems));
 		allItems[subject] = items;
+		const goal = goals.get(subject);
+		if (goalMode && goal) {
+			dayTests[subject] = testsPerDay(
+				goal,
+				books.find((b) => b.questionsPerTest)?.questionsPerTest,
+			);
+		}
 		const fresh = items.filter(
 			(i) => !doneIds.has(i.id) && !carriedIds.has(i.id),
 		);
@@ -355,14 +400,18 @@ export async function buildInput(
 		});
 	}
 
+	const dayBlocks = Object.values(dayTests).reduce((n, x) => n + (x ?? 0), 0);
 	return {
 		settings: {
 			weekStart,
 			studyDays,
-			dailyBudgetMinutes: c.dailyBudgetMinutes,
+			dailyBudgetMinutes: goalMode
+				? Math.max(1, dayBlocks) * c.blockMinutes
+				: c.dailyBudgetMinutes,
 			blockMinutes: c.blockMinutes,
 			subjects: enabled,
 			idleTime: c.idleTime,
+			...(goalMode ? { dailyTests: dayTests } : {}),
 		},
 		weeklyTopics,
 		weakTopics: weak,
@@ -439,6 +488,7 @@ export async function rebuildPlan(
 /** Görevi işaretler; ödev görevi ise ödev kaydını da eşitler. */
 export async function setTaskDone(
 	db: Database,
+	childId: string,
 	task: StoredTask,
 	planId: string,
 	done: boolean,
@@ -450,6 +500,43 @@ export async function setTaskDone(
 			.update(planTask)
 			.set({ doneAt: done ? now : null })
 			.where(eq(planTask.id, task.id));
+		// Test işaretlenince testin soru sayısı o günün sayacına eklenir, geri alınınca düşer
+		// (tek ilerleme ölçüsü çözülen sorudur). İki kez işaretlemek ikinci kez eklemez.
+		const questions = questionsForItem(task.itemId);
+		if (questions && done !== (task.doneAt !== null)) {
+			const day = istanbulDate(done ? now : (task.doneAt ?? now));
+			if (done) {
+				await tx
+					.insert(questionLog)
+					.values({
+						childId: childId,
+						subject: task.subject,
+						day,
+						solved: Math.min(1000, questions),
+						loggedByUserId: actorUserId,
+					})
+					.onConflictDoUpdate({
+						target: [questionLog.childId, questionLog.subject, questionLog.day],
+						set: {
+							solved: sql`least(1000, ${questionLog.solved} + ${questions})`,
+							loggedByUserId: actorUserId,
+						},
+					});
+			} else {
+				await tx
+					.update(questionLog)
+					.set({
+						solved: sql`greatest(0, ${questionLog.solved} - ${questions})`,
+					})
+					.where(
+						and(
+							eq(questionLog.childId, childId),
+							eq(questionLog.subject, task.subject),
+							eq(questionLog.day, day),
+						),
+					);
+			}
+		}
 		if (task.itemId?.startsWith("hw:")) {
 			await tx
 				.update(homework)
@@ -574,8 +661,54 @@ export async function completionStats(
 				sql`${hwDate} between ${start}::date and ${end}::date`,
 			),
 		);
-	return {
-		done: (tasks?.done ?? 0) + (hw?.done ?? 0),
-		total: (tasks?.total ?? 0) + (hw?.total ?? 0),
-	};
+	let done = (tasks?.done ?? 0) + (hw?.done ?? 0);
+	let total = (tasks?.total ?? 0) + (hw?.total ?? 0);
+	// Planı olmayan (ücretsiz) çocukta ödül, günlük soru hedefini tutturmaktan beslenir: hedefli her
+	// ders-gün bir birimdir, o gün çözülen soru hedefe ulaştıysa tamamlanmıştır. Plan varken
+	// görevler zaten hedefin test karşılığıdır, çift sayılmasın diye hedef birimleri eklenmez.
+	if ((tasks?.total ?? 0) === 0) {
+		const goal = await goalCompletion(db, childId, start, end);
+		done += goal.done;
+		total += goal.total;
+	}
+	return { done, total };
+}
+
+async function goalCompletion(
+	db: Database,
+	childId: string,
+	start: string,
+	end: string,
+): Promise<{ done: number; total: number }> {
+	const goals = await db
+		.select()
+		.from(dailyGoal)
+		.where(eq(dailyGoal.childId, childId));
+	if (goals.length === 0) return { done: 0, total: 0 };
+	const [kid] = await db
+		.select({ studyDays: childTable.studyDays })
+		.from(childTable)
+		.where(eq(childTable.id, childId));
+	const studyDays = new Set(kid?.studyDays ?? [1, 2, 3, 4, 5, 6]);
+	const logs = await db
+		.select()
+		.from(questionLog)
+		.where(
+			and(
+				eq(questionLog.childId, childId),
+				sql`${questionLog.day} between ${start}::date and ${end}::date`,
+			),
+		);
+	let done = 0;
+	let total = 0;
+	for (let d = start; d <= end; d = addDays(d, 1)) {
+		if (!studyDays.has(isoWeekday(d))) continue;
+		for (const g of goals) {
+			total++;
+			const solved =
+				logs.find((l) => l.day === d && l.subject === g.subject)?.solved ?? 0;
+			if (solved >= g.questions) done++;
+		}
+	}
+	return { done, total };
 }

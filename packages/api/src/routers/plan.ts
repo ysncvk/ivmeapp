@@ -1,16 +1,5 @@
-import {
-	addDays,
-	hasPlanAccess,
-	isoWeekday,
-	istanbulDate,
-	mondayOf,
-} from "@ivmeapp/core";
-import {
-	homework,
-	plan,
-	planTask,
-	subscription,
-} from "@ivmeapp/db/schema/domain";
+import { addDays, isoWeekday, istanbulDate, mondayOf } from "@ivmeapp/core";
+import { homework, plan, planTask } from "@ivmeapp/db/schema/domain";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -19,6 +8,7 @@ import { resolveFamilyChild, resolveGuardianChild } from "../authz";
 import { type Context, clock } from "../context";
 import { familyProcedure, guardianProcedure } from "../index";
 import {
+	childHasPlanAccess,
 	ensurePlan,
 	getPlan,
 	moveTaskPersist,
@@ -31,12 +21,8 @@ import { rewardOverview } from "../services/rewards";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-async function access(context: Context, childId: string): Promise<boolean> {
-	const [sub] = await context.db
-		.select()
-		.from(subscription)
-		.where(eq(subscription.childId, childId));
-	return hasPlanAccess(sub, clock(context));
+function access(context: Context, childId: string): Promise<boolean> {
+	return childHasPlanAccess(context.db, childId, clock(context));
 }
 
 const taskView = (t: StoredTask) => ({
@@ -70,7 +56,10 @@ function planView(stored: StoredPlan) {
 		coverage: {
 			cutCount: stored.coverage.cut.length,
 			subjectDays: stored.coverage.subjectDays,
-			warnings: stored.coverage.warnings,
+			// Soru hedefi varken planda olmayan ders bilinçli bir tercihtir: "ders kapalı" uyarısı gürültü
+			warnings: stored.settings.dailyTests
+				? stored.coverage.warnings.filter((w) => w.code !== "subject_off")
+				: stored.coverage.warnings,
 		},
 	};
 }
@@ -171,6 +160,7 @@ export const planRouter = {
 			if (!stored || !task) throw new ORPCError("NOT_FOUND");
 			await setTaskDone(
 				context.db,
+				child.id,
 				task,
 				stored.id,
 				input.done,
