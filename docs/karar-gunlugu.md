@@ -174,3 +174,16 @@ Durum: ✅ uygulandı · 💬 tartışılacak · 🔁 geri alınabilir
   (e-posta/WhatsApp sağlayıcısı olmadığı için). Seri (streak) gösterilmez (ADR-0016).
 - **Cümleler sayıya ek getirmez:** Türkçe ek uyumu (3'ünde/3'inde) sayıya bağlıdır; metinler ek
   gerektirmeyecek biçimde kurulur.
+
+### K-024: /rpc için Origin doğrulaması; örnek gizli anahtarla üretimde açılmaz ✅
+- **Ne:** Çerezler `sameSite=none` olduğundan başka bir siteden gelen istek çerezi taşıyabilir (CSRF).
+  `/rpc` ve `/api-reference` Origin başlığı beklenen adres (`CORS_ORIGIN`) dışındaysa 403 verir; Origin
+  yoksa (sunucudan sunucuya, GET) geçer. Better Auth uç noktaları kendi `trustedOrigins` denetimini yapar.
+  `NODE_ENV=production` iken `BETTER_AUTH_SECRET` `change-me` ile başlıyorsa sunucu açılmaz.
+- **Neden:** Güvenlik incelemesinde öne çıkan iki açık; ikisi de tek satırlık, geriye dönük uyumlu.
+- **Tartışılacak:** Web ve API farklı alan adlarına bölünürse `CORS_ORIGIN` web adresi olmalı (şu an tek adres).
+
+### K-025: Hedef editöründe ADR-0009 korkuluğu ✅
+- **Ne:** Soru hedefi varken günlük süre ayarı kapandığı için uyarı kayboluyordu. Editör artık hedefin
+  günlük test sayısını ve tahmini süresini (test sayısı × blok süresi) gösterir; 2 saat üstünde uyarır,
+  çok yüksekte daha açık uyarır (tavsiye, engel değil).

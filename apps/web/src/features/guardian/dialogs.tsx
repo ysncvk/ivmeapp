@@ -1,4 +1,4 @@
-import type { Subject } from "@ivmeapp/core";
+import { checkDailyBudget, type Subject, testsPerDay } from "@ivmeapp/core";
 import { cn } from "@ivmeapp/ui/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -610,8 +610,18 @@ export function QuestionGoalsEditor({
 			},
 		}),
 	);
+	const settings = useQuery(
+		orpc.children.settings.get.queryOptions({ input: { childId } }),
+	);
 	const value = (s: Subject) =>
 		edits[s] ?? current.data?.subjects.find((x) => x.subject === s)?.goal ?? 0;
+	// ADR-0009 korkuluğu: hedef, çocuk için yaklaşık kaç dakikalık çalışma demek (tavsiye, engel değil)
+	const totalTests = (Object.keys(SUBJECTS) as Subject[]).reduce(
+		(n, s) => n + testsPerDay(value(s)),
+		0,
+	);
+	const minutes = totalTests * (settings.data?.blockMinutes ?? 30);
+	const advice = checkDailyBudget(minutes);
 	const setValue = (s: Subject, n: number) =>
 		setEdits({ ...edits, [s]: Math.min(500, Math.max(0, n)) });
 	return (
@@ -672,6 +682,22 @@ export function QuestionGoalsEditor({
 					);
 				})}
 			</ul>
+			{totalTests > 0 && (
+				<p
+					className={cn(
+						"rounded-xl px-3 py-2 text-sm",
+						advice.level === "ok" ? "bg-muted" : "bg-accent",
+					)}
+				>
+					Günde yaklaşık <b>{totalTests} test</b> (~{minutes} dk).{" "}
+					{advice.level === "strong_warn"
+						? "Bu süre 11 yaş için çok yüksek; dinlenme ve oyun zamanını kısabilir."
+						: advice.level === "warn"
+							? "Günde 2 saatin üzeri bu yaşta önerilmez."
+							: "Sürdürülebilir bir tempo."}{" "}
+					{advice.level !== "ok" && "Yine de kaydedebilirsiniz."}
+				</p>
+			)}
 			<ErrorText>
 				{save.isError ? errorMessage(save.error) : undefined}
 			</ErrorText>

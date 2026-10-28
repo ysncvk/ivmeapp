@@ -106,6 +106,11 @@ function StudentPage() {
 			homework={d.homework.map((h) => ({ ...h }))}
 			locked={d.locked}
 			groupedSubjects={questions.data?.subjects.map((x) => x.subject)}
+			goalsDone={
+				questions.data && questions.data.subjects.length > 0
+					? questions.data.subjects.every((x) => x.solvedToday >= x.goal)
+					: null
+			}
 			questions={
 				questions.data && questions.data.subjects.length > 0 ? (
 					<QuestionGoals

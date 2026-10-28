@@ -44,6 +44,8 @@ interface Props {
 	locked?: boolean;
 	/** Basit mod: günlük soru hedefi kartları. Plan görevi yoksa "0 görev" başlığı yerine selam gösterilir. */
 	questions?: ReactNode;
+	/** Soru hedefleri: hepsi tamam mı (hedef yoksa null). Plan görevi olmasa da "bugünlük bu kadar" der. */
+	goalsDone?: boolean | null;
 	/** Soru kartında gösterilen derslerin testleri ana listede tekrarlanmaz (ödevler hep listede kalır). */
 	groupedSubjects?: readonly Subject[];
 	onToggleTask: (id: string, done: boolean) => void;
@@ -67,12 +69,17 @@ export function TodayScreen({
 	locked = false,
 	questions,
 	groupedSubjects = [],
+	goalsDone = null,
 	onToggleTask,
 	onToggleHomework,
 	onSignOut,
 }: Props) {
 	const doneCount = tasks.filter((t) => t.done).length;
-	const allDone = tasks.length > 0 && doneCount === tasks.length;
+	const tasksDone = tasks.length === 0 || doneCount === tasks.length;
+	const allDone =
+		(tasks.length > 0 || goalsDone === true) &&
+		tasksDone &&
+		goalsDone !== false;
 	const topics = [...new Set(tasks.map((t) => t.topic))];
 	const questionsOnly = questions != null && tasks.length === 0;
 	const looseTasks = tasks.filter(
